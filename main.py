@@ -27,12 +27,15 @@ try:
 except ImportError:
     GUI_AVAILABLE = False
 
-# Try to import Windows message box
+# Try to import Windows message box and mutex
 try:
     import ctypes
+    from ctypes import wintypes
     MESSAGEBOX_AVAILABLE = True
+    WINDOWS = True
 except ImportError:
     MESSAGEBOX_AVAILABLE = False
+    WINDOWS = False
 
 
 class LoLHelper:
@@ -127,7 +130,7 @@ class LoLHelper:
         self.logger = logging.getLogger(__name__)
         self.logger.info("=" * 60)
         self.logger.info("LoL Auto-Accept Helper Started")
-        self.logger.info(f"Version: 0.1.1")
+        self.logger.info(f"Version: 0.1.2")
         self.logger.info(f"Log file: {log_file}")
         self.logger.info("=" * 60)
     
@@ -139,26 +142,49 @@ class LoLHelper:
             auto_accept.disable()
         self.features.append(auto_accept)
     
+    def _is_connected(self) -> bool:
+        """Check if currently connected to client (cheap health check)."""
+        # Check if we have a client, API client, and WebSocket is connected
+        return (self.current_client_info is not None and 
+                self.api_client is not None and 
+                self.ws_client is not None and 
+                self.ws_client.connected)
+    
     def _connect_to_client(self) -> bool:
-        """Connect to League Client."""
+        """Connect to League Client (only logs discovery on first call or when state changes)."""
         try:
+            # If already connected and WebSocket is still alive, don't re-discover
+            if self._is_connected():
+                return True
+            
+            # If we had a connection that died, log that we're reconnecting
+            if self.current_client_info and not self._is_connected():
+                self.logger.info("Connection lost, attempting to reconnect...")
+            
             client_info = get_client_info()
             
             if not client_info:
+                # Only log "not detected" if state changed from connected to disconnected
+                if self.current_client_info:
+                    self.logger.warning("Client no longer detected")
+                    self.current_client_info = None
                 self.status = "Waiting for League Client...\n(Check log file for details)"
-                self.logger.debug("Client not detected. Ensure League Client is running.")
                 return False
             
-            # Check if client info changed (client restarted)
+            # Check if client info changed (client restarted with different port/password)
             if (self.current_client_info and 
                 (self.current_client_info.port != client_info.port or
                  self.current_client_info.password != client_info.password)):
-                self.logger.info("Client info changed, reconnecting...")
+                self.logger.info(f"Client info changed (port: {self.current_client_info.port} -> {client_info.port}), reconnecting...")
                 self._disconnect()
+            
+            # Only log new connection if we didn't have one before
+            if not self.current_client_info:
+                self.logger.info(f"Client detected at port {client_info.port}")
             
             self.current_client_info = client_info
             
-            # Create API client
+            # Create API client if needed
             if not self.api_client:
                 self.api_client = LCUApiClient(client_info.port, client_info.password)
                 
@@ -168,9 +194,14 @@ class LoLHelper:
                 
                 self.logger.info(f"API client initialized on port {client_info.port}")
             
-            # Connect WebSocket if not connected
-            if not self.ws_client or not self.ws_client.connected:
+            # Connect WebSocket if not connected or not running
+            if not self.ws_client or not self.ws_client.connected or not self.ws_client.running:
                 self.logger.info(f"Connecting to League Client WebSocket (port {client_info.port})...")
+                
+                # If ws_client exists but is dead, clean it up first
+                if self.ws_client:
+                    self.ws_client.disconnect()
+                
                 self.ws_client = LCUWebSocketClient(
                     client_info.port,
                     client_info.password,
@@ -178,12 +209,19 @@ class LoLHelper:
                 )
                 
                 if self.ws_client.connect():
-                    enabled_features = [f.get_name() for f in self.features if f.enabled]
-                    self.status = f"Connected!\nEnabled: {', '.join(enabled_features)}"
-                    self.logger.info(f"Successfully connected to League Client")
-                    return True
+                    # Wait a moment for connection to establish
+                    time.sleep(0.5)
+                    
+                    if self.ws_client.connected:
+                        enabled_features = [f.get_name() for f in self.features if f.enabled]
+                        self.status = f"Connected!\nEnabled: {', '.join(enabled_features)}"
+                        self.logger.info(f"Successfully connected to League Client")
+                        return True
+                    else:
+                        self.logger.warning("WebSocket connection started but not yet connected")
+                        return False
                 else:
-                    self.logger.warning("Failed to connect WebSocket, will retry...")
+                    self.logger.warning("Failed to start WebSocket connection, will retry...")
                     self.status = "Connection failed, retrying..."
                     return False
             
@@ -342,7 +380,56 @@ def show_error_message(title: str, message: str):
             pass
 
 
+def show_info_message(title: str, message: str):
+    """Show info message box on Windows."""
+    print(f"\n{title}\n{message}\n")
+    
+    if MESSAGEBOX_AVAILABLE:
+        try:
+            # MB_ICONINFORMATION | MB_OK = 0x40
+            ctypes.windll.user32.MessageBoxW(0, message, title, 0x40)
+        except:
+            pass
+
+
+def check_single_instance():
+    """Check if another instance is already running (Windows only)."""
+    if not WINDOWS:
+        return None
+    
+    try:
+        # Create a named mutex
+        mutex_name = "Global\\LoLAutoAcceptHelper_SingleInstance"
+        
+        # Windows API constants
+        ERROR_ALREADY_EXISTS = 183
+        
+        # Try to create mutex
+        kernel32 = ctypes.windll.kernel32
+        mutex = kernel32.CreateMutexW(None, True, mutex_name)
+        
+        if kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
+            # Another instance is already running
+            return None
+        
+        # Return mutex handle to keep it alive
+        return mutex
+    except Exception as e:
+        print(f"Warning: Could not check for single instance: {e}")
+        return None
+
+
 if __name__ == "__main__":
+    # Check for single instance (Windows only)
+    mutex = check_single_instance()
+    if mutex is None and WINDOWS:
+        show_info_message(
+            "LoL Helper Already Running",
+            "Another instance of LoL Auto-Accept Helper is already running.\n\n"
+            "Check the system tray (bottom-right corner) for the icon."
+        )
+        sys.exit(0)
+    
     try:
         # Get config path relative to executable
         if getattr(sys, 'frozen', False):

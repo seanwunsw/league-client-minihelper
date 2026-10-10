@@ -71,11 +71,26 @@ class LCUApiClient:
         Returns:
             True if successful, False otherwise
         """
-        result = self.post('/lol-matchmaking/v1/ready-check/accept')
-        if result is not None:
-            logger.info("Successfully accepted ready check")
-            return True
-        return False
+        endpoint = '/lol-matchmaking/v1/ready-check/accept'
+        url = f"{self.base_url}{endpoint}"
+        
+        try:
+            logger.info(f"Sending accept request: POST {endpoint}")
+            response = self.session.post(url, auth=self.auth, json={}, timeout=5)
+            status_code = response.status_code
+            
+            logger.info(f"Accept response: status={status_code}, content={response.text[:200] if response.text else '(empty)'}")
+            
+            if 200 <= status_code < 300:
+                logger.info(f"✓ Successfully accepted ready check (HTTP {status_code})")
+                return True
+            else:
+                logger.warning(f"Accept request returned non-2xx status: {status_code}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Failed to accept ready check: {e}", exc_info=True)
+            return False
     
     def get_ready_check_state(self) -> Optional[Dict[str, Any]]:
         """
