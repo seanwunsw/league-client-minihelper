@@ -87,20 +87,20 @@ jobs:
         function Find-ProcessWindows {
           param([int]$ProcessId)
           
-          $windows = @()
+          $script:foundWindows = @()
           $callback = {
             param($hwnd, $lParam)
-            $pid = 0
-            [Win32]::GetWindowThreadProcessId($hwnd, [ref]$pid) | Out-Null
+            $windowPid = 0
+            [Win32]::GetWindowThreadProcessId($hwnd, [ref]$windowPid) | Out-Null
             
-            if ($pid -eq $ProcessId -and [Win32]::IsWindowVisible($hwnd)) {
+            if ($windowPid -eq $ProcessId -and [Win32]::IsWindowVisible($hwnd)) {
               $length = [Win32]::GetWindowTextLength($hwnd)
               if ($length -gt 0) {
                 $sb = New-Object System.Text.StringBuilder($length + 1)
                 [Win32]::GetWindowText($hwnd, $sb, $sb.Capacity) | Out-Null
                 $title = $sb.ToString()
                 
-                $windows += [PSCustomObject]@{
+                $script:foundWindows += [PSCustomObject]@{
                   Handle = $hwnd
                   Title = $title
                 }
@@ -110,7 +110,7 @@ jobs:
           }
           
           [Win32]::EnumWindows($callback, [IntPtr]::Zero) | Out-Null
-          return $windows
+          return $script:foundWindows
         }
         
         Write-Host "=== SMOKE TEST: Launch and Verify UI ==="
