@@ -82,7 +82,7 @@ jobs:
           public const uint WM_CLOSE = 0x0010;
         }
         '@
-        Add-Type -TypeDefinition $code -ReferencedAssemblies System.Text
+        Add-Type -TypeDefinition $code
         
         function Find-ProcessWindows {
           param([int]$ProcessId)
