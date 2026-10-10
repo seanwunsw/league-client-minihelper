@@ -11,7 +11,7 @@ import time
 import ctypes
 import socket
 from pathlib import Path
-from queue import Empty
+from queue import Queue, Empty
 import yaml
 import traceback
 
