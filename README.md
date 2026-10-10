@@ -27,7 +27,7 @@ A lightweight Windows desktop helper that automatically accepts League of Legend
 
 ## Download
 
-Download the latest version from [Releases](../../releases). Get the `LoLAutoAccept.exe` file.
+Download the latest version from [Releases](../../releases). Get the `LoLAutoAccept-vX.X.X-win64.zip` file.
 
 ## Requirements
 
@@ -39,12 +39,13 @@ Download the latest version from [Releases](../../releases). Get the `LoLAutoAcc
 
 ## Installation & Usage
 
-1. **Download** `LoLAutoAccept.exe` from the Releases page
-2. **(Optional)** Place it in a dedicated folder (it will create a `config.yaml` file on first run)
-3. **Run** the executable by double-clicking it
-4. A window opens showing connection status and settings
-5. **Wait** for the League Client to open (or open it after starting the helper)
-6. The helper will automatically connect and start accepting ready checks
+1. **Download** the ZIP file (e.g., `LoLAutoAccept-v0.2.0-win64.zip`) from the [Releases](../../releases) page
+2. **Extract** the ZIP to a dedicated folder (right-click → Extract All...)
+3. **Run** `LoLAutoAccept.exe` by double-clicking it
+4. A `config.yaml` file will be created on first run in the same folder
+5. A window opens showing connection status and settings
+6. **Wait** for the League Client to open (or open it after starting the helper)
+7. The helper will automatically connect and start accepting ready checks
 
 ### Using the UI
 
