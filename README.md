@@ -40,12 +40,31 @@ On first run, a `config.yaml` file is created in the same folder as the executab
 # Enable or disable auto-accept feature
 auto_accept_enabled: true
 
-# Delay in seconds before accepting (0 for instant)
-accept_delay_seconds: 0
+# Random delay range before accepting (in seconds)
+# The actual delay will be randomly chosen between min and max for each ready check
+# This helps avoid appearing robotic and gives you time to manually decline if desired
+accept_delay_min_seconds: 1
+accept_delay_max_seconds: 4
+
+# Legacy config (backward compatible):
+# If you prefer a fixed delay, uncomment this line and comment out the min/max above:
+# accept_delay_seconds: 2
 
 # Logging level (DEBUG, INFO, WARNING, ERROR)
 log_level: INFO
 ```
+
+**Config Options:**
+
+- `auto_accept_enabled`: Turn auto-accept on/off (default: `true`)
+- `accept_delay_min_seconds` / `accept_delay_max_seconds`: Random delay range before accepting (default: 1-4 seconds). Each ready check gets a new random delay in this range.
+- `accept_delay_seconds`: (Legacy) Fixed delay before accepting. If present, overrides min/max settings.
+- `log_level`: Logging verbosity - `DEBUG`, `INFO`, `WARNING`, or `ERROR` (default: `INFO`)
+
+**Why random delay?**
+- Avoids appearing robotic (instant accepts look suspicious)
+- Gives you 1-4 seconds to manually decline if you change your mind
+- Makes timing less predictable
 
 After editing, restart the helper for changes to take effect.
 

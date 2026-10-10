@@ -61,7 +61,8 @@ class LoLHelper:
         """Load configuration from YAML file."""
         default_config = {
             'auto_accept_enabled': True,
-            'accept_delay_seconds': 0,
+            'accept_delay_min_seconds': 1,
+            'accept_delay_max_seconds': 4,
             'log_level': 'INFO'
         }
         
@@ -130,7 +131,7 @@ class LoLHelper:
         self.logger = logging.getLogger(__name__)
         self.logger.info("=" * 60)
         self.logger.info("LoL Auto-Accept Helper Started")
-        self.logger.info(f"Version: 0.1.2")
+        self.logger.info(f"Version: 0.1.3")
         self.logger.info(f"Log file: {log_file}")
         self.logger.info("=" * 60)
     
