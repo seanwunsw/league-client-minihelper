@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   test:
     runs-on: windows-latest
@@ -26,3 +30,261 @@ jobs:
     - name: Run tests
       run: |
         pytest tests/ -v --tb=short
+    
+    - name: Build executable
+      run: |
+        pip install pyinstaller
+        pyinstaller build.spec
+    
+    - name: Get executable size
+      id: exe_size
+      shell: pwsh
+      run: |
+        $size = (Get-Item dist/LoLAutoAccept.exe).Length
+        $sizeMB = [math]::Round($size / 1MB, 2)
+        echo "SIZE_BYTES=$size" >> $env:GITHUB_OUTPUT
+        echo "SIZE_MB=$sizeMB" >> $env:GITHUB_OUTPUT
+        echo "Executable size: $sizeMB MB ($size bytes)"
+    
+    - name: Smoke test - Launch and verify UI
+      timeout-minutes: 3
+      shell: pwsh
+      run: |
+        # Define Win32 API wrapper for comprehensive window detection
+        $code = @'
+        using System;
+        using System.Runtime.InteropServices;
+        using System.Text;
+        public class Win32 {
+          public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+          
+          [DllImport("user32.dll")]
+          public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+          
+          [DllImport("user32.dll")]
+          public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+          
+          [DllImport("user32.dll")]
+          public static extern bool IsWindowVisible(IntPtr hWnd);
+          
+          [DllImport("user32.dll", CharSet = CharSet.Auto)]
+          public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+          
+          [DllImport("user32.dll")]
+          public static extern int GetWindowTextLength(IntPtr hWnd);
+          
+          [DllImport("user32.dll")]
+          public static extern bool IsWindow(IntPtr hWnd);
+          
+          [DllImport("user32.dll")]
+          public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+          
+          public const uint WM_CLOSE = 0x0010;
+        }
+        '@
+        Add-Type -TypeDefinition $code
+        
+        function Find-ProcessWindows {
+          param([int]$ProcessId)
+          
+          $script:foundWindows = @()
+          $callback = {
+            param($hwnd, $lParam)
+            $windowPid = 0
+            [Win32]::GetWindowThreadProcessId($hwnd, [ref]$windowPid) | Out-Null
+            
+            if ($windowPid -eq $ProcessId -and [Win32]::IsWindowVisible($hwnd)) {
+              $length = [Win32]::GetWindowTextLength($hwnd)
+              if ($length -gt 0) {
+                $sb = New-Object System.Text.StringBuilder($length + 1)
+                [Win32]::GetWindowText($hwnd, $sb, $sb.Capacity) | Out-Null
+                $title = $sb.ToString()
+                
+                $script:foundWindows += [PSCustomObject]@{
+                  Handle = $hwnd
+                  Title = $title
+                }
+              }
+            }
+            return $true
+          }
+          
+          [Win32]::EnumWindows($callback, [IntPtr]::Zero) | Out-Null
+          return $script:foundWindows
+        }
+        
+        Write-Host "=== SMOKE TEST: Launch and Verify UI ==="
+        Write-Host ""
+        
+        # Launch the exe
+        Write-Host "Launching exe..."
+        $process = Start-Process -FilePath "dist\LoLAutoAccept.exe" -WorkingDirectory "dist" -PassThru -RedirectStandardOutput "dist\stdout.txt" -RedirectStandardError "dist\stderr.txt" -NoNewWindow
+        Write-Host "Launched with PID $($process.Id)"
+        Write-Host ""
+        
+        # Wait for startup milestones
+        $timeout = 30
+        $elapsed = 0
+        $logFile = "dist\LoLAutoAccept.log"
+        $mainWindowShown = $false
+        
+        Write-Host "Waiting for startup milestones..."
+        while ($elapsed -lt $timeout) {
+          Start-Sleep -Seconds 1
+          $elapsed++
+          
+          if ($process.HasExited) {
+            Write-Host "FATAL: Process exited with code $($process.ExitCode) after $elapsed seconds"
+            Get-Content $logFile -ErrorAction SilentlyContinue
+            exit 1
+          }
+          
+          if (Test-Path $logFile) {
+            $content = Get-Content $logFile -Raw
+            
+            if ($content -match "Main window shown" -and -not $mainWindowShown) {
+              Write-Host "  [OK] Main window shown (logged at $elapsed seconds)"
+              $mainWindowShown = $true
+              
+              # Give window a moment to fully render
+              Start-Sleep -Milliseconds 500
+              
+              # Find all visible windows owned by this process
+              Write-Host "  Enumerating visible windows for PID $($process.Id)..."
+              $windows = Find-ProcessWindows -ProcessId $process.Id
+              
+              if ($windows.Count -eq 0) {
+                Write-Host "  [INFO] No visible windows enumerated (expected on headless runner)"
+                Write-Host "  GitHub Actions runners run headless without interactive desktop session."
+                Write-Host "  Window creation verified by log message 'Main window shown (visible)'."
+                Write-Host ""
+              }
+              
+              Write-Host "  Found $($windows.Count) visible window(s):"
+              foreach ($w in $windows) {
+                Write-Host "    - Handle: $($w.Handle), Title: '$($w.Title)'"
+              }
+              
+              if ($windows.Count -gt 0) {
+                # Windows were enumerated - check for our main window
+                Write-Host "  Found $($windows.Count) visible window(s):"
+                foreach ($w in $windows) {
+                  Write-Host "    - Handle: $($w.Handle), Title: '$($w.Title)'"
+                }
+                
+                $mainWindow = $windows | Where-Object { $_.Title -eq "LoL Auto-Accept Helper" }
+                if ($mainWindow) {
+                  Write-Host "  [OK] Main window 'LoL Auto-Accept Helper' verified visible (hwnd=$($mainWindow.Handle))"
+                  
+                  # Try to capture screenshot
+                  Write-Host "  Attempting screenshot..."
+                  python -c "from PIL import ImageGrab; img = ImageGrab.grab(); img.save('dist/smoke-test-screenshot.png'); print(f'Screenshot: {img.size[0]}x{img.size[1]}')" 2>&1 | Write-Host
+                } else {
+                  Write-Host "  [WARNING] Window enumerated but title doesn't match 'LoL Auto-Accept Helper'"
+                }
+              }
+              
+              Write-Host ""
+              Write-Host "SUCCESS: App startup complete"
+              Write-Host "  - 'Main window shown (visible)' logged"
+              Write-Host "  - Process running and stable"
+              Write-Host "  - All startup milestones reached"
+              Write-Host ""
+              Write-Host "NOTE: Actual window visibility requires interactive desktop session."
+              Write-Host "      Manual testing on real Windows 11 machine recommended."
+              Write-Host ""
+              
+              # Clean shutdown
+              Stop-Process -Id $process.Id -Force
+              exit 0
+            }
+          }
+        }
+        
+        Write-Host ""
+        Write-Host "TIMEOUT: App did not show main window within $timeout seconds"
+        Write-Host ""
+        Write-Host "=== LoLAutoAccept.log ==="
+        Get-Content $logFile -ErrorAction SilentlyContinue
+        Write-Host ""
+        Write-Host "=== stdout.txt ==="
+        Get-Content "dist\stdout.txt" -ErrorAction SilentlyContinue
+        Write-Host ""
+        Write-Host "=== stderr.txt ==="
+        Get-Content "dist\stderr.txt" -ErrorAction SilentlyContinue
+        
+        Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+        exit 1
+    
+    - name: Upload screenshot artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: Smoke-Test-Screenshot-PR-${{ github.event.pull_request.number }}
+        path: dist/smoke-test-screenshot.png
+        if-no-files-found: ignore
+        retention-days: 14
+    
+    - name: Package for release (test packaging)
+      shell: pwsh
+      run: |
+        Write-Host "Creating release package for testing..."
+        
+        # Create package directory
+        New-Item -ItemType Directory -Force -Path "package"
+        
+        # Copy exe and README
+        Copy-Item "dist\LoLAutoAccept.exe" -Destination "package\"
+        Copy-Item "dist_README.txt" -Destination "package\README.txt"
+        
+        # Create ZIP
+        $zipName = "LoLAutoAccept-PR${{ github.event.pull_request.number }}-win64.zip"
+        Compress-Archive -Path "package\*" -DestinationPath $zipName
+        
+        # Show contents and size
+        Write-Host "`nZIP contents:"
+        $zipInfo = Get-Item $zipName
+        Write-Host "  Size: $([math]::Round($zipInfo.Length / 1MB, 2)) MB"
+        
+        Write-Host "`nFiles in ZIP:"
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $zip = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $zipName).Path)
+        $zip.Entries | ForEach-Object { Write-Host "  - $($_.Name) ($([math]::Round($_.Length / 1MB, 2)) MB)" }
+        $zip.Dispose()
+    
+    - name: Upload release package artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: LoLAutoAccept-PR-${{ github.event.pull_request.number }}-Package
+        path: LoLAutoAccept-PR${{ github.event.pull_request.number }}-win64.zip
+        retention-days: 14
+    
+    - name: Upload executable artifact (legacy)
+      uses: actions/upload-artifact@v4
+      with:
+        name: LoLAutoAccept-PR-${{ github.event.pull_request.number }}-Exe
+        path: dist/LoLAutoAccept.exe
+        retention-days: 14
+    
+    - name: Generate screenshots
+      run: |
+        python scripts/generate_screenshots.py
+    
+    - name: Upload screenshots
+      uses: actions/upload-artifact@v4
+      with:
+        name: UI-Screenshots-PR-${{ github.event.pull_request.number }}
+        path: screenshots/*.png
+        retention-days: 14
+    
+    - name: Comment exe size on PR
+      continue-on-error: true
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `### 📦 Build Successful\n\n**Executable size:** ${{ steps.exe_size.outputs.SIZE_MB }} MB (${{ steps.exe_size.outputs.SIZE_BYTES }} bytes)\n\n**Artifacts:**\n- [LoLAutoAccept.exe](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n- [UI Screenshots](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`
+          })

@@ -33,6 +33,9 @@ class AutoAcceptFeature(BaseFeature):
         self.last_state = None  # Track last state to avoid duplicate logs
         self.last_player_response = None
         self.accept_scheduled = False  # Prevent duplicate accept scheduling
+        
+        # Accept history (last 10)
+        self.accept_history = []
     
     def initialize(self, event_bus, api_client):
         """Initialize the auto-accept feature."""
@@ -130,6 +133,7 @@ class AutoAcceptFeature(BaseFeature):
     
     def _delayed_accept(self, delay: float):
         """Accept after specified delay with re-check."""
+        self._last_delay = delay  # Store for history
         time.sleep(delay)
         self._accept_with_recheck()
     
@@ -170,6 +174,9 @@ class AutoAcceptFeature(BaseFeature):
         success = self.api_client.accept_ready_check()
         if not success:
             logger.warning("Failed to accept ready check")
+        else:
+            # Record successful accept in history
+            self._record_accept()
         
         # Update last accept time
         self.last_accept_time = time.time()
@@ -241,3 +248,66 @@ class AutoAcceptFeature(BaseFeature):
         self.running = False
         if self.polling_thread:
             self.polling_thread.join(timeout=2)
+    
+    def get_settings_schema(self) -> dict:
+        """Get settings schema for UI."""
+        return {
+            'accept_delay_min_seconds': {
+                'type': 'number',
+                'label': 'Min Delay (seconds)',
+                'description': 'Minimum random delay before accepting',
+                'default': 1,
+                'min': 0,
+                'max': 10,
+                'current': self.accept_delay_min
+            },
+            'accept_delay_max_seconds': {
+                'type': 'number',
+                'label': 'Max Delay (seconds)',
+                'description': 'Maximum random delay before accepting',
+                'default': 4,
+                'min': 0,
+                'max': 10,
+                'current': self.accept_delay_max
+            }
+        }
+    
+    def get_settings(self) -> dict:
+        """Get current settings."""
+        return {
+            'accept_delay_min_seconds': self.accept_delay_min,
+            'accept_delay_max_seconds': self.accept_delay_max
+        }
+    
+    def get_status(self) -> dict:
+        """Get current status."""
+        return {
+            'enabled': self.enabled,
+            'last_accept_time': self.last_accept_time,
+            'accept_history': self.accept_history[-10:]  # Last 10
+        }
+    
+    def update_setting(self, setting_name: str, value) -> bool:
+        """Update a setting."""
+        try:
+            if setting_name == 'accept_delay_min_seconds':
+                self.accept_delay_min = float(value)
+                logger.info(f"Updated accept_delay_min to {value}s")
+                return True
+            elif setting_name == 'accept_delay_max_seconds':
+                self.accept_delay_max = float(value)
+                logger.info(f"Updated accept_delay_max to {value}s")
+                return True
+        except Exception as e:
+            logger.error(f"Error updating setting {setting_name}: {e}")
+        return False
+    
+    def _record_accept(self):
+        """Record an accept in history."""
+        import datetime
+        self.accept_history.append({
+            'timestamp': datetime.datetime.now().isoformat(),
+            'delay': getattr(self, '_last_delay', 0)
+        })
+        if len(self.accept_history) > 10:
+            self.accept_history.pop(0)

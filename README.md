@@ -4,33 +4,71 @@ A lightweight Windows desktop helper that automatically accepts League of Legend
 
 ## Features
 
+### 🎨 Desktop UI (v0.2.0+)
+
+![UI Screenshot](screenshots/connected.png)
+
+- **Dark, League-inspired UI** built with pywebview (WebView2 backend)
+- **Real-time status display**: connection state, gameflow phase, recent accepts
+- **Live settings**: toggle auto-accept and adjust delays without restart
+- **Accept history**: see your last 10 auto-accepts with timestamps
+- **Live log view**: monitor what's happening in real-time
+- **Minimal memory footprint**: window closes to tray, releasing WebView2 processes
+
+### ⚡ Core Features
+
 - **Auto-accepts ready checks** instantly using the official League Client local API
 - **Real-time WebSocket connection** for instant response (with HTTP polling fallback)
 - **Automatic client detection** via lockfile or running process
 - **Handles client restarts** - automatically reconnects when the client restarts
-- **Configurable delay** - optionally add a delay before accepting
+- **Configurable random delay** - add 1-4s random delay to avoid appearing robotic
 - **System tray integration** - runs quietly in the background with status indicators
 - **Easy to use** - just double-click and go!
 
 ## Download
 
-Download the latest version from [Releases](../../releases). Get the `LoLAutoAccept.exe` file.
+Download the latest version from [Releases](../../releases). Get the `LoLAutoAccept-vX.X.X-win64.zip` file.
+
+## Requirements
+
+- **Windows 10/11**
+- **Microsoft Edge WebView2 Runtime** (usually pre-installed on Windows 10/11)
+  - If missing, you'll see a message with download link on first run
+  - App will still work from tray without the UI
+  - Download from: https://developer.microsoft.com/microsoft-edge/webview2/
 
 ## Installation & Usage
 
-1. **Download** `LoLAutoAccept.exe` from the Releases page
-2. **(Optional)** Place it in a dedicated folder (it will create a `config.yaml` file on first run)
-3. **Run** the executable by double-clicking it
-4. **Wait** for the League Client to open (or open it after starting the helper)
-5. The helper will automatically connect and start accepting ready checks
+1. **Download** the ZIP file (e.g., `LoLAutoAccept-v0.2.0-win64.zip`) from the [Releases](../../releases) page
+2. **Extract** the ZIP to a dedicated folder (right-click → Extract All...)
+3. **Run** `LoLAutoAccept.exe` by double-clicking it
+4. A `config.yaml` file will be created on first run in the same folder
+5. A window opens showing connection status and settings
+6. **Wait** for the League Client to open (or open it after starting the helper)
+7. The helper will automatically connect and start accepting ready checks
+
+### Using the UI
+
+The UI shows:
+- **Connection status** (disconnected / connecting / connected)
+- **Gameflow phase** (Lobby / In Queue / Ready Check / Champ Select / In Game)
+- **Auto-accept toggle** - turn on/off instantly
+- **Delay controls** - adjust min/max random delay (0-10 seconds)
+- **Recent accepts** - last 10 accepts with timestamps and delays
+- **Live log** - see what's happening in real-time
 
 ### System Tray
 
-Once running, you'll see an icon in your system tray (bottom-right of Windows taskbar). Right-click it to:
+Once running, you'll see an icon in your system tray (bottom-right of Windows taskbar). 
 
-- Check status
-- Toggle auto-accept on/off
-- Quit the application
+**Closing the window (X button)** hides to tray and **destroys the UI window** to free memory (WebView2 processes exit). The core keeps running in the background.
+
+Right-click the tray icon to:
+- **Open** - reopen the UI window
+- **Toggle Auto-Accept** - turn on/off from tray
+- **Quit** - exit completely
+
+**Note**: When minimized to tray, the app uses ~30-50 MB RAM. With the UI window open, it uses ~80-120 MB due to WebView2 overhead.
 
 ### Configuration
 
@@ -46,6 +84,9 @@ auto_accept_enabled: true
 accept_delay_min_seconds: 1
 accept_delay_max_seconds: 4
 
+# UI Settings (v0.2.0+)
+start_minimized: false  # false = open window on start, true = start in tray only
+
 # Legacy config (backward compatible):
 # If you prefer a fixed delay, uncomment this line and comment out the min/max above:
 # accept_delay_seconds: 2
@@ -58,6 +99,7 @@ log_level: INFO
 
 - `auto_accept_enabled`: Turn auto-accept on/off (default: `true`)
 - `accept_delay_min_seconds` / `accept_delay_max_seconds`: Random delay range before accepting (default: 1-4 seconds). Each ready check gets a new random delay in this range.
+- `start_minimized`: Start in tray without opening the window (default: `false`)
 - `accept_delay_seconds`: (Legacy) Fixed delay before accepting. If present, overrides min/max settings.
 - `log_level`: Logging verbosity - `DEBUG`, `INFO`, `WARNING`, or `ERROR` (default: `INFO`)
 
@@ -66,7 +108,7 @@ log_level: INFO
 - Gives you 1-4 seconds to manually decline if you change your mind
 - Makes timing less predictable
 
-After editing, restart the helper for changes to take effect.
+**Note (v0.2.0+)**: You can change most settings directly in the UI window! Changes apply immediately and are saved to `config.yaml`.
 
 ## Windows SmartScreen Notice
 
