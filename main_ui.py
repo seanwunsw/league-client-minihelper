@@ -594,4 +594,21 @@ def main():
         return 1
 
 if __name__ == '__main__':
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except Exception as e:
+        # If main() fails before logging setup, write to emergency log
+        try:
+            emergency_log = os.path.join(APP_DIR, "emergency.log")
+            with open(emergency_log, "w") as f:
+                f.write(f"Emergency: Failed to start\n")
+                f.write(f"Error: {e}\n")
+                f.write(traceback.format_exc())
+        except:
+            pass
+        # Try to show error box
+        try:
+            ctypes.windll.user32.MessageBoxW(0, f"Failed to start:\n{e}", "Error", 0x10)
+        except:
+            pass
+        sys.exit(1)
