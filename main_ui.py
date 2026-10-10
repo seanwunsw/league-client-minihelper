@@ -518,10 +518,13 @@ def main():
         logger.info("First instance, continuing startup")
         
         # Start IPC server in background
+        logger.info("Starting IPC server")
         if ipc_socket:
             threading.Thread(target=ipc_server_thread, args=(ipc_socket,), daemon=True).start()
+            logger.info("IPC server thread started")
         
         # Check WebView2
+        logger.info(f"WebView available: {WEBVIEW_AVAILABLE}")
         if not WEBVIEW_AVAILABLE:
             logger.warning("WebView2 not available, running in tray-only mode")
             show_error_box(
@@ -533,10 +536,13 @@ def main():
             )
         
         # Set up UI log handler
+        logger.info("Setting up UI log handler")
         ui_log_handler = UILogHandler(max_logs=100)
         logging.getLogger().addHandler(ui_log_handler)
+        logger.info("UI log handler added")
         
         # Create controller
+        logger.info("Creating controller")
         controller = AppController(config)
         logger.info("Controller created")
         
