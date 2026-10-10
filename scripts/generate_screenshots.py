@@ -128,7 +128,7 @@ def generate_screenshots():
         
         browser.close()
     
-    print(f"\n✓ Generated {len(STATES)} screenshots in {screenshots_dir}")
+    print(f"\nGenerated {len(STATES)} screenshots in {screenshots_dir}")
     return True
 
 if __name__ == '__main__':
