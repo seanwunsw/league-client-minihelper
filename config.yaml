@@ -1,0 +1,10 @@
+# League of Legends Auto-Accept Configuration
+
+# Enable or disable auto-accept feature
+auto_accept_enabled: true
+
+# Delay in seconds before accepting (0 for instant)
+accept_delay_seconds: 0
+
+# Logging level (DEBUG, INFO, WARNING, ERROR)
+log_level: INFO
