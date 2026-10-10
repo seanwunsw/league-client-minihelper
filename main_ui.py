@@ -127,18 +127,18 @@ class UILogHandler(logging.Handler):
         super().__init__()
         self.logs = []
         self.max_logs = max_logs
-        self.lock = threading.Lock()
+        self._buf_lock = threading.Lock()
         self.message_queue = Queue()
         self._window_ref = None
     
     def set_window(self, win):
         """Set window reference for JS calls."""
-        with self.lock:
+        with self._buf_lock:
             self._window_ref = win
     
     def clear_window(self):
         """Clear window reference when destroyed."""
-        with self.lock:
+        with self._buf_lock:
             self._window_ref = None
     
     def emit(self, record):
@@ -157,7 +157,7 @@ class UILogHandler(logging.Handler):
             import datetime
             timestamp = datetime.datetime.fromtimestamp(record.created).strftime('%H:%M:%S')
             
-            with self.lock:
+            with self._buf_lock:
                 # Add to buffer
                 self.logs.append({'level': level, 'message': msg, 'timestamp': timestamp})
                 if len(self.logs) > self.max_logs:
@@ -170,7 +170,7 @@ class UILogHandler(logging.Handler):
     
     def drain_messages(self):
         """Drain queued messages and send to UI (call from GUI thread)."""
-        with self.lock:
+        with self._buf_lock:
             win = self._window_ref
         
         if not win:
@@ -192,7 +192,7 @@ class UILogHandler(logging.Handler):
     
     def get_logs(self):
         """Get current log buffer."""
-        with self.lock:
+        with self._buf_lock:
             return list(self.logs)
 
 # API for pywebview
