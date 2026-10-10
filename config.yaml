@@ -3,8 +3,15 @@
 # Enable or disable auto-accept feature
 auto_accept_enabled: true
 
-# Delay in seconds before accepting (0 for instant)
-accept_delay_seconds: 0
+# Random delay range before accepting (in seconds)
+# The actual delay will be randomly chosen between min and max for each ready check
+# This helps avoid appearing robotic and gives you time to manually decline if desired
+accept_delay_min_seconds: 1
+accept_delay_max_seconds: 4
+
+# Legacy config (backward compatible):
+# If you prefer a fixed delay, uncomment this line and comment out the min/max above:
+# accept_delay_seconds: 2
 
 # Logging level (DEBUG, INFO, WARNING, ERROR)
 log_level: INFO

@@ -2,6 +2,7 @@
 import logging
 import time
 import threading
+import random
 from typing import Optional
 from features.base_feature import BaseFeature
 
@@ -14,11 +15,24 @@ class AutoAcceptFeature(BaseFeature):
     def __init__(self, config: dict):
         super().__init__(config)
         self.api_client = None
-        self.accept_delay = config.get('accept_delay_seconds', 0)
+        
+        # Backward compatibility: check for old accept_delay_seconds config
+        if 'accept_delay_seconds' in config:
+            # Old config: use fixed delay
+            self.accept_delay_min = config.get('accept_delay_seconds', 0)
+            self.accept_delay_max = self.accept_delay_min
+        else:
+            # New config: use random delay range
+            self.accept_delay_min = config.get('accept_delay_min_seconds', 1)
+            self.accept_delay_max = config.get('accept_delay_max_seconds', 4)
+        
         self.last_accept_time = 0
         self.cooldown = 2  # Prevent multiple accepts in quick succession
         self.polling_thread = None
         self.running = False
+        self.last_state = None  # Track last state to avoid duplicate logs
+        self.last_player_response = None
+        self.accept_scheduled = False  # Prevent duplicate accept scheduling
     
     def initialize(self, event_bus, api_client):
         """Initialize the auto-accept feature."""
@@ -32,7 +46,10 @@ class AutoAcceptFeature(BaseFeature):
         self.polling_thread = threading.Thread(target=self._poll_ready_check, daemon=True)
         self.polling_thread.start()
         
-        logger.info(f"Auto-accept feature initialized (delay: {self.accept_delay}s, polling: enabled)")
+        if self.accept_delay_min == self.accept_delay_max:
+            logger.info(f"Auto-accept feature initialized (delay: {self.accept_delay_min}s fixed, polling: enabled)")
+        else:
+            logger.info(f"Auto-accept feature initialized (delay: {self.accept_delay_min}-{self.accept_delay_max}s random, polling: enabled)")
     
     def get_name(self) -> str:
         return "Auto-Accept"
@@ -43,41 +60,106 @@ class AutoAcceptFeature(BaseFeature):
             return
         
         try:
-            data = event_data.get('data', {})
-            state = data.get('state', '')
-            player_response = data.get('playerResponse', '')
             event_type = event_data.get('eventType', '')
             
-            # Log every ready check event at INFO level
-            logger.info(f"Ready check event received: uri={uri}, eventType={event_type}, state={state}, playerResponse={player_response}")
+            # Handle null/missing data (Delete events, ended ready checks)
+            data = event_data.get('data')
+            if data is None:
+                # Delete event or null data - ready check ended/removed
+                logger.debug(f"Ready check event with null data: eventType={event_type}")
+                # Reset state tracking
+                if self.last_state != 'None':
+                    logger.debug("Ready check ended (Delete event)")
+                    self.last_state = 'None'
+                    self.last_player_response = None
+                    self.accept_scheduled = False  # Reset scheduled flag
+                return
+            
+            # Extract state and response
+            state = data.get('state', '')
+            player_response = data.get('playerResponse', '')
+            
+            # Log at INFO only if state or response changed
+            state_changed = (state != self.last_state or player_response != self.last_player_response)
+            if state_changed:
+                logger.info(f"Ready check state change: eventType={event_type}, state={state}, playerResponse={player_response}")
+                self.last_state = state
+                self.last_player_response = player_response
+                
+                # Reset scheduled flag if state changed away from InProgress
+                if state != 'InProgress':
+                    self.accept_scheduled = False
+            else:
+                logger.debug(f"Ready check event (no change): eventType={event_type}, state={state}, playerResponse={player_response}")
             
             # Check if ready check is active and we haven't responded
             if state == 'InProgress' and player_response == 'None':
+                # Check if accept already scheduled for this ready check
+                if self.accept_scheduled:
+                    logger.debug("Accept already scheduled for this ready check, skipping")
+                    return
+                
                 # Apply cooldown to prevent duplicate accepts
                 current_time = time.time()
                 if current_time - self.last_accept_time < self.cooldown:
                     logger.debug("Skipping accept due to cooldown")
                     return
                 
-                self.last_accept_time = current_time
+                # Mark accept as scheduled
+                self.accept_scheduled = True
                 
-                # Accept after delay (if configured)
-                if self.accept_delay > 0:
-                    logger.info(f"Ready check detected, accepting in {self.accept_delay}s...")
+                # Calculate delay (random if range specified, fixed otherwise)
+                if self.accept_delay_min == self.accept_delay_max:
+                    delay = self.accept_delay_min
+                else:
+                    delay = random.uniform(self.accept_delay_min, self.accept_delay_max)
+                
+                # Accept after delay
+                if delay > 0:
+                    logger.info(f"Ready check detected, accepting in {delay:.2f}s...")
                     threading.Thread(
                         target=self._delayed_accept,
+                        args=(delay,),
                         daemon=True
                     ).start()
                 else:
                     logger.info("Ready check detected, accepting NOW...")
-                    self._accept()
+                    self._accept_with_recheck()
         except Exception as e:
             logger.error(f"Error handling ready check event: {e}", exc_info=True)
     
-    def _delayed_accept(self):
-        """Accept after configured delay."""
-        time.sleep(self.accept_delay)
-        self._accept()
+    def _delayed_accept(self, delay: float):
+        """Accept after specified delay with re-check."""
+        time.sleep(delay)
+        self._accept_with_recheck()
+    
+    def _accept_with_recheck(self):
+        """Accept the ready check after re-checking state."""
+        try:
+            # Re-check ready check state before accepting
+            if self.api_client:
+                state_data = self.api_client.get_ready_check_state()
+                
+                if state_data:
+                    state = state_data.get('state', '')
+                    player_response = state_data.get('playerResponse', '')
+                    
+                    if state != 'InProgress':
+                        logger.info(f"Ready check no longer InProgress (state={state}), skipping accept")
+                        return
+                    
+                    if player_response != 'None':
+                        logger.info(f"Player already responded (response={player_response}), skipping accept")
+                        return
+                else:
+                    logger.debug("Ready check state unavailable (404/null), skipping accept")
+                    return
+            
+            # State is still valid, proceed with accept
+            self._accept()
+        finally:
+            # Always reset scheduled flag
+            self.accept_scheduled = False
     
     def _accept(self):
         """Accept the ready check."""
@@ -88,6 +170,9 @@ class AutoAcceptFeature(BaseFeature):
         success = self.api_client.accept_ready_check()
         if not success:
             logger.warning("Failed to accept ready check")
+        
+        # Update last accept time
+        self.last_accept_time = time.time()
     
     def _poll_ready_check(self):
         """Poll ready check state via HTTP as fallback (every 1 second)."""
@@ -103,22 +188,48 @@ class AutoAcceptFeature(BaseFeature):
                 # Get current ready check state
                 state_data = self.api_client.get_ready_check_state()
                 
-                if state_data:
-                    state = state_data.get('state', '')
-                    player_response = state_data.get('playerResponse', '')
+                # Handle null response (404, not in ready check)
+                if state_data is None:
+                    logger.debug("HTTP poll: no active ready check (404/null)")
+                    continue
+                
+                state = state_data.get('state', '')
+                player_response = state_data.get('playerResponse', '')
+                
+                logger.debug(f"HTTP poll: state={state}, playerResponse={player_response}")
+                
+                # Check if ready check is active and we haven't responded
+                if state == 'InProgress' and player_response == 'None':
+                    # Check if accept already scheduled (WS handler may have scheduled it)
+                    if self.accept_scheduled:
+                        logger.debug("Accept already scheduled by WS handler, skipping poll accept")
+                        continue
                     
-                    logger.debug(f"HTTP poll: state={state}, playerResponse={player_response}")
+                    # Apply cooldown
+                    current_time = time.time()
+                    if current_time - self.last_accept_time < self.cooldown:
+                        continue
                     
-                    # Check if ready check is active and we haven't responded
-                    if state == 'InProgress' and player_response == 'None':
-                        # Apply cooldown
-                        current_time = time.time()
-                        if current_time - self.last_accept_time < self.cooldown:
-                            continue
-                        
-                        self.last_accept_time = current_time
-                        logger.info("Ready check detected via HTTP polling, accepting...")
-                        self._accept()
+                    # Mark accept as scheduled
+                    self.accept_scheduled = True
+                    
+                    # Calculate delay
+                    if self.accept_delay_min == self.accept_delay_max:
+                        delay = self.accept_delay_min
+                    else:
+                        delay = random.uniform(self.accept_delay_min, self.accept_delay_max)
+                    
+                    logger.info(f"Ready check detected via HTTP polling, accepting in {delay:.2f}s...")
+                    
+                    # Accept with delay in separate thread
+                    if delay > 0:
+                        threading.Thread(
+                            target=self._delayed_accept,
+                            args=(delay,),
+                            daemon=True
+                        ).start()
+                    else:
+                        self._accept_with_recheck()
                         
             except Exception as e:
                 logger.debug(f"Error in HTTP polling: {e}")
