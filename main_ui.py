@@ -7,6 +7,7 @@ import logging
 import threading
 import time
 import ctypes
+import socket
 from pathlib import Path
 import yaml
 
@@ -70,12 +71,75 @@ def load_config():
             return yaml.safe_load(f)
     return {}
 
+# Log handler for UI
+class UILogHandler(logging.Handler):
+    """Thread-safe log handler that forwards to UI."""
+    
+    def __init__(self, max_logs=100):
+        super().__init__()
+        self.logs = []
+        self.max_logs = max_logs
+        self.lock = threading.Lock()
+        self._window_ref = None
+    
+    def set_window(self, win):
+        """Set window reference for JS calls."""
+        with self.lock:
+            self._window_ref = win
+    
+    def clear_window(self):
+        """Clear window reference when destroyed."""
+        with self.lock:
+            self._window_ref = None
+    
+    def emit(self, record):
+        """Emit a log record."""
+        try:
+            # Simple format for UI: just message without timestamp/logger name
+            msg = record.getMessage()
+            level_map = {
+                'DEBUG': 'info',
+                'INFO': 'info',
+                'WARNING': 'warning',
+                'ERROR': 'error',
+                'CRITICAL': 'error'
+            }
+            level = level_map.get(record.levelname, 'info')
+            
+            with self.lock:
+                # Add to buffer with timestamp
+                import datetime
+                timestamp = datetime.datetime.fromtimestamp(record.created).strftime('%H:%M:%S')
+                self.logs.append({'level': level, 'message': msg, 'timestamp': timestamp})
+                if len(self.logs) > self.max_logs:
+                    self.logs.pop(0)
+                
+                # Forward to UI if window exists
+                if self._window_ref:
+                    try:
+                        # Escape message for JS
+                        safe_msg = msg.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
+                        self._window_ref.evaluate_js(f'window.addLog("{level}", "{safe_msg}")')
+                    except:
+                        pass  # Window may be closing
+        except:
+            pass  # Never fail on logging
+    
+    def get_logs(self):
+        """Get current log buffer."""
+        with self.lock:
+            return list(self.logs)
+
+# Global log handler
+ui_log_handler = None
+
 # API for pywebview
 class API:
     """JavaScript API exposed to the UI."""
     
-    def __init__(self, controller):
+    def __init__(self, controller, log_handler):
         self.controller = controller
+        self.log_handler = log_handler
     
     def get_state(self):
         """Get current application state."""
@@ -88,12 +152,64 @@ class API:
     def update_setting(self, feature_name, setting_name, value):
         """Update a feature setting."""
         return self.controller.update_feature_setting(feature_name, setting_name, value)
+    
+    def get_logs(self):
+        """Get current log buffer."""
+        return self.log_handler.get_logs()
 
 # Global state
 window = None
 tray_icon = None
 controller = None
 config = None
+ipc_socket = None
+
+# IPC for single instance
+IPC_PORT = 57847  # Random port for IPC
+
+def check_single_instance():
+    """Check if another instance is running and signal it."""
+    global ipc_socket
+    
+    # Try to connect to existing instance
+    try:
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.settimeout(1)
+        client.connect(('127.0.0.1', IPC_PORT))
+        # If we connected, another instance exists
+        client.send(b'SHOW_WINDOW')
+        client.close()
+        return False  # Another instance exists
+    except:
+        pass  # No existing instance
+    
+    # Create server socket to listen for future launches
+    try:
+        ipc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        ipc_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        ipc_socket.bind(('127.0.0.1', IPC_PORT))
+        ipc_socket.listen(1)
+        threading.Thread(target=ipc_server_thread, daemon=True).start()
+        return True  # We are the first instance
+    except:
+        return False  # Port in use
+
+def ipc_server_thread():
+    """Listen for IPC commands from other instances."""
+    global ipc_socket, window
+    
+    while True:
+        try:
+            client, _ = ipc_socket.accept()
+            data = client.recv(1024)
+            if data == b'SHOW_WINDOW':
+                # Signal to open/show window
+                if window is None:
+                    threading.Thread(target=open_window, daemon=True).start()
+                # TODO: bring window to front if already open (requires platform-specific code)
+            client.close()
+        except:
+            break
 
 # Tray icon
 def create_tray_icon():
@@ -136,7 +252,7 @@ def create_tray_icon():
 # Window management
 def open_window():
     """Open the UI window."""
-    global window, controller
+    global window, controller, ui_log_handler
     
     if not WEBVIEW_AVAILABLE:
         logger.error("Cannot open window: WebView not available")
@@ -160,7 +276,7 @@ def open_window():
         
         logger.info(f"Opening window with UI from {ui_path}")
         
-        api = API(controller)
+        api = API(controller, ui_log_handler)
         window = webview.create_window(
             'LoL Auto-Accept Helper',
             f'file://{ui_path}',
@@ -171,12 +287,28 @@ def open_window():
             min_size=(600, 600)
         )
         
+        # Window loaded callback - set up log handler
+        def on_loaded():
+            global window, ui_log_handler
+            if window and ui_log_handler:
+                ui_log_handler.set_window(window)
+                # Send initial log buffer
+                for log in ui_log_handler.get_logs():
+                    try:
+                        safe_msg = log["message"].replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
+                        window.evaluate_js(f'window.addLog("{log["level"]}", "{safe_msg}")')
+                    except:
+                        pass
+        
         # Window closed callback
         def on_closed():
-            global window
+            global window, ui_log_handler
             logger.info("Window closed, destroying")
+            if ui_log_handler:
+                ui_log_handler.clear_window()
             window = None
         
+        window.events.loaded += on_loaded
         window.events.closed += on_closed
         
         # Start webview (blocks until window closed)
@@ -190,11 +322,21 @@ def open_window():
 
 def main():
     """Main entry point."""
-    global controller, tray_icon, config, window
+    global controller, tray_icon, config, window, ui_log_handler
+    
+    # Check for single instance
+    if not check_single_instance():
+        logger.info("Another instance is already running, signaling it to show window")
+        sys.exit(0)
     
     # Load config
     config = load_config()
     start_minimized = config.get('start_minimized', False)
+    
+    # Set up UI log handler
+    ui_log_handler = UILogHandler(max_logs=100)
+    ui_log_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logging.getLogger().addHandler(ui_log_handler)
     
     logger.info("=== LoL Auto-Accept Helper v0.2.0 (UI Mode) ===")
     

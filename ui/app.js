@@ -28,6 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
         renderLogs();
     });
     
+    // Load initial logs from backend
+    if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.get_logs().then(backendLogs => {
+            logs = backendLogs;
+            renderLogs();
+        }).catch(() => {});
+    }
+    
     // Start polling for state updates
     setInterval(updateState, 1000);
     updateState();

@@ -233,9 +233,29 @@ class AppController:
                 time.sleep(0.5)
                 if self.ws_client.connected:
                     logger.info("Successfully connected to League Client")
+                    
+                    # Initialize gameflow phase on connect
+                    self._fetch_gameflow_phase()
+                    
                     return True
         
         return False
+    
+    def _fetch_gameflow_phase(self):
+        """Fetch current gameflow phase via GET."""
+        if not self.api_client:
+            return
+        
+        try:
+            response = self.api_client.get("/lol-gameflow/v1/gameflow-phase")
+            if response and response.status_code == 200:
+                phase = response.text.strip('"')
+                if phase != self.gameflow_phase:
+                    self.gameflow_phase = phase
+                    logger.info(f"Gameflow phase: {phase}")
+                    self._notify_state_change()
+        except Exception as e:
+            logger.debug(f"Error fetching gameflow phase: {e}")
     
     def _disconnect(self):
         """Disconnect from client."""

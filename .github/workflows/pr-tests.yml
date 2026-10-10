@@ -26,3 +26,47 @@ jobs:
     - name: Run tests
       run: |
         pytest tests/ -v --tb=short
+    
+    - name: Build executable
+      run: |
+        pip install pyinstaller
+        pyinstaller build.spec
+    
+    - name: Get executable size
+      id: exe_size
+      shell: pwsh
+      run: |
+        $size = (Get-Item dist/LoLAutoAccept.exe).Length
+        $sizeMB = [math]::Round($size / 1MB, 2)
+        echo "SIZE_BYTES=$size" >> $env:GITHUB_OUTPUT
+        echo "SIZE_MB=$sizeMB" >> $env:GITHUB_OUTPUT
+        echo "Executable size: $sizeMB MB ($size bytes)"
+    
+    - name: Upload executable artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: LoLAutoAccept-PR-${{ github.event.pull_request.number }}
+        path: dist/LoLAutoAccept.exe
+        retention-days: 14
+    
+    - name: Generate screenshots
+      run: |
+        python scripts/generate_screenshots.py
+    
+    - name: Upload screenshots
+      uses: actions/upload-artifact@v4
+      with:
+        name: UI-Screenshots-PR-${{ github.event.pull_request.number }}
+        path: screenshots/*.png
+        retention-days: 14
+    
+    - name: Comment exe size on PR
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `### 📦 Build Successful\n\n**Executable size:** ${{ steps.exe_size.outputs.SIZE_MB }} MB (${{ steps.exe_size.outputs.SIZE_BYTES }} bytes)\n\n**Artifacts:**\n- [LoLAutoAccept.exe](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n- [UI Screenshots](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`
+          })

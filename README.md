@@ -6,6 +6,8 @@ A lightweight Windows desktop helper that automatically accepts League of Legend
 
 ### 🎨 Desktop UI (v0.2.0+)
 
+![UI Screenshot](screenshots/connected.png)
+
 - **Dark, League-inspired UI** built with pywebview (WebView2 backend)
 - **Real-time status display**: connection state, gameflow phase, recent accepts
 - **Live settings**: toggle auto-accept and adjust delays without restart
