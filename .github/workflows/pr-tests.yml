@@ -46,6 +46,60 @@ jobs:
         echo "SIZE_MB=$sizeMB" >> $env:GITHUB_OUTPUT
         echo "Executable size: $sizeMB MB ($size bytes)"
     
+    - name: Smoke test - Launch built exe
+      timeout-minutes: 2
+      shell: pwsh
+      run: |
+        # Launch the exe in background
+        $process = Start-Process -FilePath "dist\LoLAutoAccept.exe" -PassThru -WindowStyle Hidden
+        
+        Write-Host "Launched exe with PID $($process.Id), waiting for startup logs..."
+        
+        # Wait up to 30 seconds for log file to appear and contain startup messages
+        $timeout = 30
+        $elapsed = 0
+        $logFile = "LoLAutoAccept.log"
+        
+        while ($elapsed -lt $timeout) {
+          Start-Sleep -Seconds 1
+          $elapsed++
+          
+          if (Test-Path $logFile) {
+            $content = Get-Content $logFile -Raw
+            
+            # Check for required startup log lines
+            if ($content -match "=== LoL Auto-Accept Helper v0.2.0") {
+              Write-Host "  Found startup message"
+              
+              if ($content -match "Controller created") {
+                Write-Host "  Found 'Controller created'"
+                
+                if ($content -match "Controller started") {
+                  Write-Host "  Found 'Controller started'"
+                  
+                  if ($content -match "Tray icon created" -or $content -match "Tray thread started") {
+                    Write-Host "SUCCESS: App started successfully in $elapsed seconds"
+                    Stop-Process -Id $process.Id -Force
+                    exit 0
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        # Timeout - print log and fail
+        Write-Host "FAILED: App did not start within $timeout seconds"
+        if (Test-Path $logFile) {
+          Write-Host "`nLog contents:"
+          Get-Content $logFile
+        } else {
+          Write-Host "`nNo log file found"
+        }
+        
+        Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+        exit 1
+    
     - name: Upload executable artifact
       uses: actions/upload-artifact@v4
       with:
