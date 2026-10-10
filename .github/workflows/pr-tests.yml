@@ -46,133 +46,179 @@ jobs:
         echo "SIZE_MB=$sizeMB" >> $env:GITHUB_OUTPUT
         echo "Executable size: $sizeMB MB ($size bytes)"
     
-    - name: Smoke test - Launch built exe
-      timeout-minutes: 2
+    - name: Smoke test - Launch and verify UI
+      timeout-minutes: 3
       shell: pwsh
       run: |
-        # Define Win32 API wrapper for window detection
+        # Define Win32 API wrapper for comprehensive window detection
         $code = @'
         using System;
         using System.Runtime.InteropServices;
+        using System.Text;
         public class Win32 {
+          public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+          
+          [DllImport("user32.dll")]
+          public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+          
+          [DllImport("user32.dll")]
+          public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+          
+          [DllImport("user32.dll")]
+          public static extern bool IsWindowVisible(IntPtr hWnd);
+          
           [DllImport("user32.dll", CharSet = CharSet.Auto)]
-          public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+          public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+          
+          [DllImport("user32.dll")]
+          public static extern int GetWindowTextLength(IntPtr hWnd);
           
           [DllImport("user32.dll")]
           public static extern bool IsWindow(IntPtr hWnd);
+          
+          [DllImport("user32.dll")]
+          public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+          
+          public const uint WM_CLOSE = 0x0010;
         }
         '@
-        Add-Type -TypeDefinition $code
+        Add-Type -TypeDefinition $code -ReferencedAssemblies System.Text
         
-        # Check what files exist before launch
-        Write-Host "Files in dist:"
-        Get-ChildItem dist | Select-Object Name
+        function Find-ProcessWindows {
+          param([int]$ProcessId)
+          
+          $windows = @()
+          $callback = {
+            param($hwnd, $lParam)
+            $pid = 0
+            [Win32]::GetWindowThreadProcessId($hwnd, [ref]$pid) | Out-Null
+            
+            if ($pid -eq $ProcessId -and [Win32]::IsWindowVisible($hwnd)) {
+              $length = [Win32]::GetWindowTextLength($hwnd)
+              if ($length -gt 0) {
+                $sb = New-Object System.Text.StringBuilder($length + 1)
+                [Win32]::GetWindowText($hwnd, $sb, $sb.Capacity) | Out-Null
+                $title = $sb.ToString()
+                
+                $windows += [PSCustomObject]@{
+                  Handle = $hwnd
+                  Title = $title
+                }
+              }
+            }
+            return $true
+          }
+          
+          [Win32]::EnumWindows($callback, [IntPtr]::Zero) | Out-Null
+          return $windows
+        }
         
-        # Launch the exe and redirect output
-        Write-Host "`nLaunching exe..."
+        Write-Host "=== SMOKE TEST: Launch and Verify UI ==="
+        Write-Host ""
+        
+        # Launch the exe
+        Write-Host "Launching exe..."
         $process = Start-Process -FilePath "dist\LoLAutoAccept.exe" -WorkingDirectory "dist" -PassThru -RedirectStandardOutput "dist\stdout.txt" -RedirectStandardError "dist\stderr.txt" -NoNewWindow
+        Write-Host "Launched with PID $($process.Id)"
+        Write-Host ""
         
-        Write-Host "Launched exe with PID $($process.Id), waiting for startup logs..."
-        
-        # Wait up to 30 seconds for log file to appear and contain startup messages
+        # Wait for startup milestones
         $timeout = 30
         $elapsed = 0
         $logFile = "dist\LoLAutoAccept.log"
-        $windowCheckDone = $false
+        $mainWindowShown = $false
         
+        Write-Host "Waiting for startup milestones..."
         while ($elapsed -lt $timeout) {
           Start-Sleep -Seconds 1
           $elapsed++
           
-          # Check if process exited
           if ($process.HasExited) {
-            Write-Host "ERROR: Process exited with code $($process.ExitCode) after $elapsed seconds"
-            break
+            Write-Host "FATAL: Process exited with code $($process.ExitCode) after $elapsed seconds"
+            Get-Content $logFile -ErrorAction SilentlyContinue
+            exit 1
           }
           
           if (Test-Path $logFile) {
             $content = Get-Content $logFile -Raw
             
-            # Check for required startup log lines
-            if ($content -match "=== LoL Auto-Accept Helper v0.2.0") {
-              if ($elapsed -eq 1) {
-                Write-Host "  [OK] Startup message"
+            if ($content -match "Main window shown" -and -not $mainWindowShown) {
+              Write-Host "  [OK] Main window shown (logged at $elapsed seconds)"
+              $mainWindowShown = $true
+              
+              # Give window a moment to fully render
+              Start-Sleep -Milliseconds 500
+              
+              # Find all visible windows owned by this process
+              Write-Host "  Enumerating visible windows for PID $($process.Id)..."
+              $windows = Find-ProcessWindows -ProcessId $process.Id
+              
+              if ($windows.Count -eq 0) {
+                Write-Host "  FAIL: No visible windows found for process"
+                Write-Host "  This may indicate the hosted runner has no display/window manager"
+                Write-Host ""
+                Write-Host "Full log:"
+                Get-Content $logFile
+                Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+                exit 1
               }
               
-              if ($content -match "Controller created") {
-                if ($elapsed -eq 1) {
-                  Write-Host "  [OK] Controller created"
-                }
-                
-                if ($content -match "Controller started") {
-                  if ($elapsed -eq 1) {
-                    Write-Host "  [OK] Controller started"
-                  }
-                  
-                  if ($content -match "Tray thread started") {
-                    if ($elapsed -eq 1) {
-                      Write-Host "  [OK] Tray thread started"
-                    }
-                    
-                    if ($content -match "Webview ready") {
-                      if (-not $windowCheckDone) {
-                        Write-Host "  [OK] Webview ready"
-                        
-                        # Try to find the window (wait a moment for it to be created)
-                        Start-Sleep -Milliseconds 500
-                        $hwnd = [Win32]::FindWindow($null, "LoL Auto-Accept Helper")
-                        
-                        if ($hwnd -ne [IntPtr]::Zero -and [Win32]::IsWindow($hwnd)) {
-                          Write-Host "  [OK] Window found: hwnd=$hwnd"
-                          $windowCheckDone = $true
-                        } else {
-                          Write-Host "  [INFO] Window not found by title (may be start_minimized or hidden keeper)"
-                          $windowCheckDone = $true
-                        }
-                      }
-                      
-                      # Success: all key log lines present
-                      Write-Host "`nSUCCESS: App started successfully in $elapsed seconds"
-                      Stop-Process -Id $process.Id -Force
-                      exit 0
-                    }
-                  }
-                }
+              Write-Host "  Found $($windows.Count) visible window(s):"
+              foreach ($w in $windows) {
+                Write-Host "    - Handle: $($w.Handle), Title: '$($w.Title)'"
               }
+              
+              # Check for our main window
+              $mainWindow = $windows | Where-Object { $_.Title -eq "LoL Auto-Accept Helper" }
+              if ($mainWindow) {
+                Write-Host "  [OK] Main window 'LoL Auto-Accept Helper' is visible (hwnd=$($mainWindow.Handle))"
+              } else {
+                Write-Host "  FAIL: Main window 'LoL Auto-Accept Helper' not found in visible windows"
+                Write-Host ""
+                Write-Host "Full log:"
+                Get-Content $logFile
+                Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+                exit 1
+              }
+              
+              # Capture screenshot using Python one-liner
+              Write-Host "  Capturing screenshot..."
+              python -c "from PIL import ImageGrab; img = ImageGrab.grab(); img.save('dist/smoke-test-screenshot.png'); print(f'Screenshot: {img.size[0]}x{img.size[1]}')" 2>&1 | Write-Host
+              
+              Write-Host ""
+              Write-Host "SUCCESS: Main window verified and shown"
+              Write-Host ""
+              
+              # Clean shutdown
+              Stop-Process -Id $process.Id -Force
+              exit 0
             }
           }
         }
         
-        # Timeout or exit - print all available info
-        Write-Host "`nFAILED: App did not start within $timeout seconds"
-        
-        Write-Host "`nFiles in dist after launch:"
-        Get-ChildItem dist | Select-Object Name
-        
-        if (Test-Path $logFile) {
-          Write-Host "`n=== LoLAutoAccept.log ==="
-          Get-Content $logFile
-        } else {
-          Write-Host "`nNo LoLAutoAccept.log found"
-        }
-        
-        if (Test-Path "dist\emergency.log") {
-          Write-Host "`n=== emergency.log ==="
-          Get-Content "dist\emergency.log"
-        }
-        
-        if (Test-Path "dist\stdout.txt") {
-          Write-Host "`n=== stdout.txt ==="
-          Get-Content "dist\stdout.txt"
-        }
-        
-        if (Test-Path "dist\stderr.txt") {
-          Write-Host "`n=== stderr.txt ==="
-          Get-Content "dist\stderr.txt"
-        }
+        Write-Host ""
+        Write-Host "TIMEOUT: App did not show main window within $timeout seconds"
+        Write-Host ""
+        Write-Host "=== LoLAutoAccept.log ==="
+        Get-Content $logFile -ErrorAction SilentlyContinue
+        Write-Host ""
+        Write-Host "=== stdout.txt ==="
+        Get-Content "dist\stdout.txt" -ErrorAction SilentlyContinue
+        Write-Host ""
+        Write-Host "=== stderr.txt ==="
+        Get-Content "dist\stderr.txt" -ErrorAction SilentlyContinue
         
         Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
         exit 1
+    
+    - name: Upload screenshot artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: Smoke-Test-Screenshot-PR-${{ github.event.pull_request.number }}
+        path: dist/smoke-test-screenshot.png
+        if-no-files-found: ignore
+        retention-days: 14
     
     - name: Upload executable artifact
       uses: actions/upload-artifact@v4

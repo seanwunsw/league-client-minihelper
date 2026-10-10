@@ -446,6 +446,7 @@ def webview_thread_main(config, logger):
         
         # Create visible window if not start_minimized
         if not start_minimized:
+            logger.info("Creating main window (start_minimized=False)")
             window = webview.create_window(
                 'LoL Auto-Accept Helper',
                 f'file://{ui_path}',
@@ -456,9 +457,12 @@ def webview_thread_main(config, logger):
                 min_size=(600, 600)
             )
             
+            def on_shown():
+                logger.info("Main window shown (visible)")
+            
             def on_loaded():
                 global window, ui_log_handler
-                logger.info("Window loaded")
+                logger.info("Main window loaded (DOM ready)")
                 if window and ui_log_handler:
                     ui_log_handler.set_window(window)
                     # Send initial logs
@@ -471,13 +475,16 @@ def webview_thread_main(config, logger):
             
             def on_closed():
                 global window, ui_log_handler
-                logger.info("Window closed, destroying")
+                logger.info("Main window closed by user (X button)")
                 if ui_log_handler:
                     ui_log_handler.clear_window()
                 window = None
             
+            window.events.shown += on_shown
             window.events.loaded += on_loaded
             window.events.closed += on_closed
+        else:
+            logger.info("Skipping main window creation (start_minimized=True)")
         
         webview_ready.set()
         logger.info("Webview ready, starting GUI loop")
