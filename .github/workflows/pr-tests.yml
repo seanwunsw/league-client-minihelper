@@ -50,8 +50,15 @@ jobs:
       timeout-minutes: 2
       shell: pwsh
       run: |
-        # Launch the exe in background
-        $process = Start-Process -FilePath "dist\LoLAutoAccept.exe" -PassThru -WindowStyle Hidden
+        cd dist
+        
+        # Check what files exist before launch
+        Write-Host "Files in dist before launch:"
+        Get-ChildItem | Select-Object Name
+        
+        # Launch the exe and redirect output
+        Write-Host "`nLaunching exe..."
+        $process = Start-Process -FilePath "LoLAutoAccept.exe" -PassThru -RedirectStandardOutput "stdout.txt" -RedirectStandardError "stderr.txt" -NoNewWindow
         
         Write-Host "Launched exe with PID $($process.Id), waiting for startup logs..."
         
@@ -63,6 +70,12 @@ jobs:
         while ($elapsed -lt $timeout) {
           Start-Sleep -Seconds 1
           $elapsed++
+          
+          # Check if process exited
+          if ($process.HasExited) {
+            Write-Host "Process exited with code $($process.ExitCode) after $elapsed seconds"
+            break
+          }
           
           if (Test-Path $logFile) {
             $content = Get-Content $logFile -Raw
@@ -88,13 +101,32 @@ jobs:
           }
         }
         
-        # Timeout - print log and fail
-        Write-Host "FAILED: App did not start within $timeout seconds"
+        # Timeout or exit - print all available info
+        Write-Host "`nFAILED: App did not start within $timeout seconds"
+        
+        Write-Host "`nFiles after launch:"
+        Get-ChildItem | Select-Object Name
+        
         if (Test-Path $logFile) {
-          Write-Host "`nLog contents:"
+          Write-Host "`n=== LoLAutoAccept.log ==="
           Get-Content $logFile
         } else {
-          Write-Host "`nNo log file found"
+          Write-Host "`nNo LoLAutoAccept.log found"
+        }
+        
+        if (Test-Path "emergency.log") {
+          Write-Host "`n=== emergency.log ==="
+          Get-Content "emergency.log"
+        }
+        
+        if (Test-Path "stdout.txt") {
+          Write-Host "`n=== stdout.txt ==="
+          Get-Content "stdout.txt"
+        }
+        
+        if (Test-Path "stderr.txt") {
+          Write-Host "`n=== stderr.txt ==="
+          Get-Content "stderr.txt"
         }
         
         Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
