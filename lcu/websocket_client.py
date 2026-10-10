@@ -45,19 +45,38 @@ class LCUWebSocketClient:
             
             def on_message(ws, message):
                 try:
-                    # LCU WebSocket sends JSON array: [opcode, event, data]
+                    # Skip empty messages (subscribe acknowledgments)
+                    if not message or not message.strip():
+                        logger.debug("Received empty WebSocket message (likely subscribe ack)")
+                        return
+                    
+                    # LCU WebSocket protocol: [opcode, eventName, eventData]
+                    # eventData format: {uri: "...", eventType: "Create/Update/Delete", data: {...}}
                     data = json.loads(message)
+                    
                     if isinstance(data, list) and len(data) >= 3:
                         opcode = data[0]
+                        event_name = data[1]
+                        event_data = data[2]
+                        
                         if opcode == 8:  # Event message
-                            event_data = data[2]
                             uri = event_data.get('uri', '')
                             event_type = event_data.get('eventType', '')
                             
-                            # Call event handler
-                            self.on_event(uri, event_data)
+                            logger.debug(f"WS Event: opcode={opcode}, name={event_name}, uri={uri}, type={event_type}")
+                            
+                            # Call event handler with URI as key
+                            if uri:
+                                self.on_event(uri, event_data)
+                        else:
+                            logger.debug(f"WS Message: opcode={opcode}, data={data}")
+                    else:
+                        logger.debug(f"WS Message (unexpected format): {data}")
+                        
+                except json.JSONDecodeError as e:
+                    logger.debug(f"Non-JSON WebSocket message (likely ack): {message[:100]}")
                 except Exception as e:
-                    logger.error(f"Error processing WebSocket message: {e}")
+                    logger.error(f"Error processing WebSocket message: {e}", exc_info=True)
             
             def on_error(ws, error):
                 logger.debug(f"WebSocket error: {error}")
