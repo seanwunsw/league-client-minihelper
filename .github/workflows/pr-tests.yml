@@ -50,19 +50,19 @@ jobs:
       timeout-minutes: 2
       shell: pwsh
       run: |
-        # Helper function to find window by title
-        Add-Type @"
-          using System;
-          using System.Runtime.InteropServices;
-          using System.Text;
-          public class Win32 {
-            [DllImport("user32.dll", CharSet = CharSet.Auto)]
-            public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
-            
-            [DllImport("user32.dll")]
-            public static extern bool IsWindow(IntPtr hWnd);
-          }
-"@
+        # Define Win32 API wrapper for window detection
+        $code = @'
+        using System;
+        using System.Runtime.InteropServices;
+        public class Win32 {
+          [DllImport("user32.dll", CharSet = CharSet.Auto)]
+          public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+          
+          [DllImport("user32.dll")]
+          public static extern bool IsWindow(IntPtr hWnd);
+        }
+        '@
+        Add-Type -TypeDefinition $code
         
         # Check what files exist before launch
         Write-Host "Files in dist:"
@@ -78,7 +78,7 @@ jobs:
         $timeout = 30
         $elapsed = 0
         $logFile = "dist\LoLAutoAccept.log"
-        $windowFound = $false
+        $windowCheckDone = $false
         
         while ($elapsed -lt $timeout) {
           Start-Sleep -Seconds 1
@@ -95,45 +95,44 @@ jobs:
             
             # Check for required startup log lines
             if ($content -match "=== LoL Auto-Accept Helper v0.2.0") {
-              if (-not $windowFound) {
+              if ($elapsed -eq 1) {
                 Write-Host "  [OK] Startup message"
               }
               
               if ($content -match "Controller created") {
-                if (-not $windowFound) {
+                if ($elapsed -eq 1) {
                   Write-Host "  [OK] Controller created"
                 }
                 
                 if ($content -match "Controller started") {
-                  if (-not $windowFound) {
+                  if ($elapsed -eq 1) {
                     Write-Host "  [OK] Controller started"
                   }
                   
                   if ($content -match "Tray thread started") {
-                    if (-not $windowFound) {
+                    if ($elapsed -eq 1) {
                       Write-Host "  [OK] Tray thread started"
                     }
                     
                     if ($content -match "Webview ready") {
-                      if (-not $windowFound) {
+                      if (-not $windowCheckDone) {
                         Write-Host "  [OK] Webview ready"
                         
-                        # Try to find the window
+                        # Try to find the window (wait a moment for it to be created)
+                        Start-Sleep -Milliseconds 500
                         $hwnd = [Win32]::FindWindow($null, "LoL Auto-Accept Helper")
+                        
                         if ($hwnd -ne [IntPtr]::Zero -and [Win32]::IsWindow($hwnd)) {
-                          Write-Host "  [OK] Found window with title 'LoL Auto-Accept Helper'"
-                          $windowFound = $true
+                          Write-Host "  [OK] Window found: hwnd=$hwnd"
+                          $windowCheckDone = $true
+                        } else {
+                          Write-Host "  [INFO] Window not found by title (may be start_minimized or hidden keeper)"
+                          $windowCheckDone = $true
                         }
                       }
                       
-                      # Success criteria: all key log lines present
+                      # Success: all key log lines present
                       Write-Host "`nSUCCESS: App started successfully in $elapsed seconds"
-                      if ($windowFound) {
-                        Write-Host "Window was detected and verified."
-                      } else {
-                        Write-Host "Note: Window title not found (may be minimized or not shown yet)."
-                      }
-                      
                       Stop-Process -Id $process.Id -Force
                       exit 0
                     }
