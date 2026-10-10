@@ -454,7 +454,7 @@ def webview_thread_main(config, logger):
                 width=750,
                 height=800,
                 resizable=True,
-                min_size=(600, 600)
+                min_size=(600, 700)
             )
             
             def on_shown():

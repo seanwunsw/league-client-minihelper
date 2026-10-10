@@ -92,7 +92,10 @@ function renderHistory(history) {
         return;
     }
     
-    historyEl.innerHTML = history.map(item => {
+    // Show only last 5 accepts
+    const recentHistory = history.slice(-5);
+    
+    historyEl.innerHTML = recentHistory.map(item => {
         const time = new Date(item.timestamp).toLocaleTimeString();
         return `<div class="history-item">${time} - Delay: ${item.delay.toFixed(2)}s</div>`;
     }).reverse().join('');
