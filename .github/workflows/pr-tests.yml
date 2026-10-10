@@ -50,6 +50,20 @@ jobs:
       timeout-minutes: 2
       shell: pwsh
       run: |
+        # Helper function to find window by title
+        Add-Type @"
+          using System;
+          using System.Runtime.InteropServices;
+          using System.Text;
+          public class Win32 {
+            [DllImport("user32.dll", CharSet = CharSet.Auto)]
+            public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+            
+            [DllImport("user32.dll")]
+            public static extern bool IsWindow(IntPtr hWnd);
+          }
+"@
+        
         # Check what files exist before launch
         Write-Host "Files in dist:"
         Get-ChildItem dist | Select-Object Name
@@ -64,6 +78,7 @@ jobs:
         $timeout = 30
         $elapsed = 0
         $logFile = "dist\LoLAutoAccept.log"
+        $windowFound = $false
         
         while ($elapsed -lt $timeout) {
           Start-Sleep -Seconds 1
@@ -71,7 +86,7 @@ jobs:
           
           # Check if process exited
           if ($process.HasExited) {
-            Write-Host "Process exited with code $($process.ExitCode) after $elapsed seconds"
+            Write-Host "ERROR: Process exited with code $($process.ExitCode) after $elapsed seconds"
             break
           }
           
@@ -80,18 +95,48 @@ jobs:
             
             # Check for required startup log lines
             if ($content -match "=== LoL Auto-Accept Helper v0.2.0") {
-              Write-Host "  Found startup message"
+              if (-not $windowFound) {
+                Write-Host "  [OK] Startup message"
+              }
               
               if ($content -match "Controller created") {
-                Write-Host "  Found 'Controller created'"
+                if (-not $windowFound) {
+                  Write-Host "  [OK] Controller created"
+                }
                 
                 if ($content -match "Controller started") {
-                  Write-Host "  Found 'Controller started'"
+                  if (-not $windowFound) {
+                    Write-Host "  [OK] Controller started"
+                  }
                   
-                  if ($content -match "Tray icon created" -or $content -match "Tray thread started") {
-                    Write-Host "SUCCESS: App started successfully in $elapsed seconds"
-                    Stop-Process -Id $process.Id -Force
-                    exit 0
+                  if ($content -match "Tray thread started") {
+                    if (-not $windowFound) {
+                      Write-Host "  [OK] Tray thread started"
+                    }
+                    
+                    if ($content -match "Webview ready") {
+                      if (-not $windowFound) {
+                        Write-Host "  [OK] Webview ready"
+                        
+                        # Try to find the window
+                        $hwnd = [Win32]::FindWindow($null, "LoL Auto-Accept Helper")
+                        if ($hwnd -ne [IntPtr]::Zero -and [Win32]::IsWindow($hwnd)) {
+                          Write-Host "  [OK] Found window with title 'LoL Auto-Accept Helper'"
+                          $windowFound = $true
+                        }
+                      }
+                      
+                      # Success criteria: all key log lines present
+                      Write-Host "`nSUCCESS: App started successfully in $elapsed seconds"
+                      if ($windowFound) {
+                        Write-Host "Window was detected and verified."
+                      } else {
+                        Write-Host "Note: Window title not found (may be minimized or not shown yet)."
+                      }
+                      
+                      Stop-Process -Id $process.Id -Force
+                      exit 0
+                    }
                   }
                 }
               }
