@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoL Auto-Accept</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚔️ LoL Auto-Accept</h1>
+            <div class="connection-status" id="connection-status">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="status-text">Disconnected</span>
+            </div>
+        </header>
+        
+        <section class="gameflow">
+            <div class="phase-display" id="gameflow-phase">No Active Session</div>
+        </section>
+        
+        <section class="feature-section">
+            <h2>Auto-Accept Ready Check</h2>
+            <div class="toggle-container">
+                <label class="toggle">
+                    <input type="checkbox" id="auto-accept-toggle">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span>Auto-Accept Enabled</span>
+            </div>
+            
+            <div class="setting-group">
+                <label>Random Delay Range (seconds)</label>
+                <div class="range-inputs">
+                    <input type="number" id="delay-min" min="0" max="10" step="0.1" value="1">
+                    <span>to</span>
+                    <input type="number" id="delay-max" min="0" max="10" step="0.1" value="4">
+                </div>
+            </div>
+            
+            <div class="history">
+                <h3>Recent Accepts</h3>
+                <div id="accept-history" class="history-list">No recent accepts</div>
+            </div>
+        </section>
+        
+        <section class="log-section">
+            <h3>Log <button id="clear-log">Clear</button></h3>
+            <div id="log-view" class="log-view"></div>
+        </section>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

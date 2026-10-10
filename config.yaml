@@ -13,5 +13,8 @@ accept_delay_max_seconds: 4
 # If you prefer a fixed delay, uncomment this line and comment out the min/max above:
 # accept_delay_seconds: 2
 
+# UI Settings (for pywebview UI mode)
+start_minimized: false  # Start with UI window open (false) or minimized to tray (true)
+
 # Logging level (DEBUG, INFO, WARNING, ERROR)
 log_level: INFO
