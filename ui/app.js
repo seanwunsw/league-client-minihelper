@@ -129,11 +129,16 @@ function render() {
 function loadChampions() {
     if (!window.pywebview || !window.pywebview.api) return;
     
-    // Call custom method to get champion list from feature
+    // Get champions from feature status
     const champSelectFeature = state.features.find(f => f.name === 'Champion Select');
     if (champSelectFeature && champSelectFeature.status && champSelectFeature.status.champions) {
         champions = champSelectFeature.status.champions;
         updateChampionDropdowns();
+        
+        // Also render preferences after champions are loaded
+        if (champSelectFeature.settings && champSelectFeature.settings.role_preferences) {
+            renderRolePreferences(champSelectFeature.settings.role_preferences);
+        }
     }
 }
 

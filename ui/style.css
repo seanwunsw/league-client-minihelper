@@ -109,9 +109,10 @@ h3 { font-size: 13px; margin-bottom: 6px; color: #c8aa6e; }
     display: flex;
     flex-direction: column;
     background: #1e2328;
-    padding: 15px;
+    padding: 12px;
     border-radius: 6px;
-    min-height: 0;
+    min-height: 150px;
+    max-height: 300px;
 }
 
 .toggle-container {
