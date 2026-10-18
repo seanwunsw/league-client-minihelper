@@ -1,0 +1,1213 @@
+{
+  "266": {
+    "id": 266,
+    "name_en": "Aatrox",
+    "name_zh_tw": "厄薩斯",
+    "name_zh_cn": "暗裔剑魔",
+    "internal_name": "Aatrox"
+  },
+  "103": {
+    "id": 103,
+    "name_en": "Ahri",
+    "name_zh_tw": "阿璃",
+    "name_zh_cn": "九尾妖狐",
+    "internal_name": "Ahri"
+  },
+  "84": {
+    "id": 84,
+    "name_en": "Akali",
+    "name_zh_tw": "阿卡莉",
+    "name_zh_cn": "离群之刺",
+    "internal_name": "Akali"
+  },
+  "166": {
+    "id": 166,
+    "name_en": "Akshan",
+    "name_zh_tw": "埃可尚",
+    "name_zh_cn": "影哨",
+    "internal_name": "Akshan"
+  },
+  "12": {
+    "id": 12,
+    "name_en": "Alistar",
+    "name_zh_tw": "亞歷斯塔",
+    "name_zh_cn": "牛头酋长",
+    "internal_name": "Alistar"
+  },
+  "799": {
+    "id": 799,
+    "name_en": "Ambessa",
+    "name_zh_tw": "安比薩",
+    "name_zh_cn": "铁血狼母",
+    "internal_name": "Ambessa"
+  },
+  "32": {
+    "id": 32,
+    "name_en": "Amumu",
+    "name_zh_tw": "阿姆姆",
+    "name_zh_cn": "殇之木乃伊",
+    "internal_name": "Amumu"
+  },
+  "34": {
+    "id": 34,
+    "name_en": "Anivia",
+    "name_zh_tw": "艾妮維亞",
+    "name_zh_cn": "冰晶凤凰",
+    "internal_name": "Anivia"
+  },
+  "1": {
+    "id": 1,
+    "name_en": "Annie",
+    "name_zh_tw": "安妮",
+    "name_zh_cn": "黑暗之女",
+    "internal_name": "Annie"
+  },
+  "523": {
+    "id": 523,
+    "name_en": "Aphelios",
+    "name_zh_tw": "亞菲利歐",
+    "name_zh_cn": "残月之肃",
+    "internal_name": "Aphelios"
+  },
+  "22": {
+    "id": 22,
+    "name_en": "Ashe",
+    "name_zh_tw": "艾希",
+    "name_zh_cn": "寒冰射手",
+    "internal_name": "Ashe"
+  },
+  "136": {
+    "id": 136,
+    "name_en": "Aurelion Sol",
+    "name_zh_tw": "翱銳龍獸",
+    "name_zh_cn": "铸星龙王",
+    "internal_name": "AurelionSol"
+  },
+  "893": {
+    "id": 893,
+    "name_en": "Aurora",
+    "name_zh_tw": "歐羅拉",
+    "name_zh_cn": "双界灵兔",
+    "internal_name": "Aurora"
+  },
+  "268": {
+    "id": 268,
+    "name_en": "Azir",
+    "name_zh_tw": "阿祈爾",
+    "name_zh_cn": "沙漠皇帝",
+    "internal_name": "Azir"
+  },
+  "432": {
+    "id": 432,
+    "name_en": "Bard",
+    "name_zh_tw": "巴德",
+    "name_zh_cn": "星界游神",
+    "internal_name": "Bard"
+  },
+  "200": {
+    "id": 200,
+    "name_en": "Bel'Veth",
+    "name_zh_tw": "貝爾薇斯",
+    "name_zh_cn": "虚空女皇",
+    "internal_name": "Belveth"
+  },
+  "53": {
+    "id": 53,
+    "name_en": "Blitzcrank",
+    "name_zh_tw": "布里茨",
+    "name_zh_cn": "蒸汽机器人",
+    "internal_name": "Blitzcrank"
+  },
+  "63": {
+    "id": 63,
+    "name_en": "Brand",
+    "name_zh_tw": "布蘭德",
+    "name_zh_cn": "复仇焰魂",
+    "internal_name": "Brand"
+  },
+  "201": {
+    "id": 201,
+    "name_en": "Braum",
+    "name_zh_tw": "布郎姆",
+    "name_zh_cn": "弗雷尔卓德之心",
+    "internal_name": "Braum"
+  },
+  "233": {
+    "id": 233,
+    "name_en": "Briar",
+    "name_zh_tw": "布蕾爾",
+    "name_zh_cn": "狂厄蔷薇",
+    "internal_name": "Briar"
+  },
+  "51": {
+    "id": 51,
+    "name_en": "Caitlyn",
+    "name_zh_tw": "凱特琳",
+    "name_zh_cn": "皮城女警",
+    "internal_name": "Caitlyn"
+  },
+  "164": {
+    "id": 164,
+    "name_en": "Camille",
+    "name_zh_tw": "卡蜜兒",
+    "name_zh_cn": "青钢影",
+    "internal_name": "Camille"
+  },
+  "69": {
+    "id": 69,
+    "name_en": "Cassiopeia",
+    "name_zh_tw": "卡莎碧雅",
+    "name_zh_cn": "魔蛇之拥",
+    "internal_name": "Cassiopeia"
+  },
+  "31": {
+    "id": 31,
+    "name_en": "Cho'Gath",
+    "name_zh_tw": "科加斯",
+    "name_zh_cn": "虚空恐惧",
+    "internal_name": "Chogath"
+  },
+  "42": {
+    "id": 42,
+    "name_en": "Corki",
+    "name_zh_tw": "庫奇",
+    "name_zh_cn": "英勇投弹手",
+    "internal_name": "Corki"
+  },
+  "122": {
+    "id": 122,
+    "name_en": "Darius",
+    "name_zh_tw": "達瑞斯",
+    "name_zh_cn": "诺克萨斯之手",
+    "internal_name": "Darius"
+  },
+  "131": {
+    "id": 131,
+    "name_en": "Diana",
+    "name_zh_tw": "黛安娜",
+    "name_zh_cn": "皎月女神",
+    "internal_name": "Diana"
+  },
+  "119": {
+    "id": 119,
+    "name_en": "Draven",
+    "name_zh_tw": "達瑞文",
+    "name_zh_cn": "荣耀行刑官",
+    "internal_name": "Draven"
+  },
+  "36": {
+    "id": 36,
+    "name_en": "Dr. Mundo",
+    "name_zh_tw": "蒙多醫生",
+    "name_zh_cn": "祖安狂人",
+    "internal_name": "DrMundo"
+  },
+  "245": {
+    "id": 245,
+    "name_en": "Ekko",
+    "name_zh_tw": "艾克",
+    "name_zh_cn": "时间刺客",
+    "internal_name": "Ekko"
+  },
+  "60": {
+    "id": 60,
+    "name_en": "Elise",
+    "name_zh_tw": "伊莉絲",
+    "name_zh_cn": "蜘蛛女皇",
+    "internal_name": "Elise"
+  },
+  "28": {
+    "id": 28,
+    "name_en": "Evelynn",
+    "name_zh_tw": "伊芙琳",
+    "name_zh_cn": "痛苦之拥",
+    "internal_name": "Evelynn"
+  },
+  "81": {
+    "id": 81,
+    "name_en": "Ezreal",
+    "name_zh_tw": "伊澤瑞爾",
+    "name_zh_cn": "探险家",
+    "internal_name": "Ezreal"
+  },
+  "9": {
+    "id": 9,
+    "name_en": "Fiddlesticks",
+    "name_zh_tw": "費德提克",
+    "name_zh_cn": "远古恐惧",
+    "internal_name": "Fiddlesticks"
+  },
+  "114": {
+    "id": 114,
+    "name_en": "Fiora",
+    "name_zh_tw": "菲歐拉",
+    "name_zh_cn": "无双剑姬",
+    "internal_name": "Fiora"
+  },
+  "105": {
+    "id": 105,
+    "name_en": "Fizz",
+    "name_zh_tw": "飛斯",
+    "name_zh_cn": "潮汐海灵",
+    "internal_name": "Fizz"
+  },
+  "3": {
+    "id": 3,
+    "name_en": "Galio",
+    "name_zh_tw": "加里歐",
+    "name_zh_cn": "正义巨像",
+    "internal_name": "Galio"
+  },
+  "41": {
+    "id": 41,
+    "name_en": "Gangplank",
+    "name_zh_tw": "剛普朗克",
+    "name_zh_cn": "海洋之灾",
+    "internal_name": "Gangplank"
+  },
+  "86": {
+    "id": 86,
+    "name_en": "Garen",
+    "name_zh_tw": "蓋倫",
+    "name_zh_cn": "德玛西亚之力",
+    "internal_name": "Garen"
+  },
+  "150": {
+    "id": 150,
+    "name_en": "Gnar",
+    "name_zh_tw": "吶兒",
+    "name_zh_cn": "迷失之牙",
+    "internal_name": "Gnar"
+  },
+  "79": {
+    "id": 79,
+    "name_en": "Gragas",
+    "name_zh_tw": "古拉格斯",
+    "name_zh_cn": "酒桶",
+    "internal_name": "Gragas"
+  },
+  "104": {
+    "id": 104,
+    "name_en": "Graves",
+    "name_zh_tw": "葛雷夫",
+    "name_zh_cn": "法外狂徒",
+    "internal_name": "Graves"
+  },
+  "887": {
+    "id": 887,
+    "name_en": "Gwen",
+    "name_zh_tw": "關",
+    "name_zh_cn": "灵罗娃娃",
+    "internal_name": "Gwen"
+  },
+  "120": {
+    "id": 120,
+    "name_en": "Hecarim",
+    "name_zh_tw": "赫克林",
+    "name_zh_cn": "战争之影",
+    "internal_name": "Hecarim"
+  },
+  "74": {
+    "id": 74,
+    "name_en": "Heimerdinger",
+    "name_zh_tw": "漢默丁格",
+    "name_zh_cn": "大发明家",
+    "internal_name": "Heimerdinger"
+  },
+  "910": {
+    "id": 910,
+    "name_en": "Hwei",
+    "name_zh_tw": "赫威",
+    "name_zh_cn": "异画师",
+    "internal_name": "Hwei"
+  },
+  "420": {
+    "id": 420,
+    "name_en": "Illaoi",
+    "name_zh_tw": "伊羅旖",
+    "name_zh_cn": "海兽祭司",
+    "internal_name": "Illaoi"
+  },
+  "39": {
+    "id": 39,
+    "name_en": "Irelia",
+    "name_zh_tw": "伊瑞莉雅",
+    "name_zh_cn": "刀锋舞者",
+    "internal_name": "Irelia"
+  },
+  "427": {
+    "id": 427,
+    "name_en": "Ivern",
+    "name_zh_tw": "埃爾文",
+    "name_zh_cn": "翠神",
+    "internal_name": "Ivern"
+  },
+  "40": {
+    "id": 40,
+    "name_en": "Janna",
+    "name_zh_tw": "珍娜",
+    "name_zh_cn": "风暴之怒",
+    "internal_name": "Janna"
+  },
+  "59": {
+    "id": 59,
+    "name_en": "Jarvan IV",
+    "name_zh_tw": "嘉文四世",
+    "name_zh_cn": "德玛西亚皇子",
+    "internal_name": "JarvanIV"
+  },
+  "24": {
+    "id": 24,
+    "name_en": "Jax",
+    "name_zh_tw": "賈克斯",
+    "name_zh_cn": "武器大师",
+    "internal_name": "Jax"
+  },
+  "126": {
+    "id": 126,
+    "name_en": "Jayce",
+    "name_zh_tw": "杰西",
+    "name_zh_cn": "未来守护者",
+    "internal_name": "Jayce"
+  },
+  "202": {
+    "id": 202,
+    "name_en": "Jhin",
+    "name_zh_tw": "燼",
+    "name_zh_cn": "戏命师",
+    "internal_name": "Jhin"
+  },
+  "222": {
+    "id": 222,
+    "name_en": "Jinx",
+    "name_zh_tw": "吉茵珂絲",
+    "name_zh_cn": "暴走萝莉",
+    "internal_name": "Jinx"
+  },
+  "145": {
+    "id": 145,
+    "name_en": "Kai'Sa",
+    "name_zh_tw": "凱莎",
+    "name_zh_cn": "虚空之女",
+    "internal_name": "Kaisa"
+  },
+  "429": {
+    "id": 429,
+    "name_en": "Kalista",
+    "name_zh_tw": "克黎思妲",
+    "name_zh_cn": "复仇之矛",
+    "internal_name": "Kalista"
+  },
+  "43": {
+    "id": 43,
+    "name_en": "Karma",
+    "name_zh_tw": "卡瑪",
+    "name_zh_cn": "天启者",
+    "internal_name": "Karma"
+  },
+  "30": {
+    "id": 30,
+    "name_en": "Karthus",
+    "name_zh_tw": "卡爾瑟斯",
+    "name_zh_cn": "死亡颂唱者",
+    "internal_name": "Karthus"
+  },
+  "38": {
+    "id": 38,
+    "name_en": "Kassadin",
+    "name_zh_tw": "卡薩丁",
+    "name_zh_cn": "虚空行者",
+    "internal_name": "Kassadin"
+  },
+  "55": {
+    "id": 55,
+    "name_en": "Katarina",
+    "name_zh_tw": "卡特蓮娜",
+    "name_zh_cn": "不祥之刃",
+    "internal_name": "Katarina"
+  },
+  "10": {
+    "id": 10,
+    "name_en": "Kayle",
+    "name_zh_tw": "凱爾",
+    "name_zh_cn": "正义天使",
+    "internal_name": "Kayle"
+  },
+  "141": {
+    "id": 141,
+    "name_en": "Kayn",
+    "name_zh_tw": "慨影",
+    "name_zh_cn": "影流之镰",
+    "internal_name": "Kayn"
+  },
+  "85": {
+    "id": 85,
+    "name_en": "Kennen",
+    "name_zh_tw": "凱能",
+    "name_zh_cn": "狂暴之心",
+    "internal_name": "Kennen"
+  },
+  "121": {
+    "id": 121,
+    "name_en": "Kha'Zix",
+    "name_zh_tw": "卡力斯",
+    "name_zh_cn": "虚空掠夺者",
+    "internal_name": "Khazix"
+  },
+  "203": {
+    "id": 203,
+    "name_en": "Kindred",
+    "name_zh_tw": "鏡爪",
+    "name_zh_cn": "永猎双子",
+    "internal_name": "Kindred"
+  },
+  "240": {
+    "id": 240,
+    "name_en": "Kled",
+    "name_zh_tw": "克雷德",
+    "name_zh_cn": "暴怒骑士",
+    "internal_name": "Kled"
+  },
+  "96": {
+    "id": 96,
+    "name_en": "Kog'Maw",
+    "name_zh_tw": "寇格魔",
+    "name_zh_cn": "深渊巨口",
+    "internal_name": "KogMaw"
+  },
+  "897": {
+    "id": 897,
+    "name_en": "K'Sante",
+    "name_zh_tw": "卡桑帝",
+    "name_zh_cn": "纳祖芒荣耀",
+    "internal_name": "KSante"
+  },
+  "7": {
+    "id": 7,
+    "name_en": "LeBlanc",
+    "name_zh_tw": "勒布朗",
+    "name_zh_cn": "诡术妖姬",
+    "internal_name": "Leblanc"
+  },
+  "64": {
+    "id": 64,
+    "name_en": "Lee Sin",
+    "name_zh_tw": "李星",
+    "name_zh_cn": "盲僧",
+    "internal_name": "LeeSin"
+  },
+  "89": {
+    "id": 89,
+    "name_en": "Leona",
+    "name_zh_tw": "雷歐娜",
+    "name_zh_cn": "曙光女神",
+    "internal_name": "Leona"
+  },
+  "876": {
+    "id": 876,
+    "name_en": "Lillia",
+    "name_zh_tw": "莉莉亞",
+    "name_zh_cn": "含羞蓓蕾",
+    "internal_name": "Lillia"
+  },
+  "127": {
+    "id": 127,
+    "name_en": "Lissandra",
+    "name_zh_tw": "麗珊卓",
+    "name_zh_cn": "冰霜女巫",
+    "internal_name": "Lissandra"
+  },
+  "805": {
+    "id": 805,
+    "name_en": "Locke",
+    "name_zh_tw": "洛克",
+    "name_zh_cn": "灰烬驱魔人",
+    "internal_name": "Locke"
+  },
+  "236": {
+    "id": 236,
+    "name_en": "Lucian",
+    "name_zh_tw": "路西恩",
+    "name_zh_cn": "圣枪游侠",
+    "internal_name": "Lucian"
+  },
+  "117": {
+    "id": 117,
+    "name_en": "Lulu",
+    "name_zh_tw": "露璐",
+    "name_zh_cn": "仙灵女巫",
+    "internal_name": "Lulu"
+  },
+  "99": {
+    "id": 99,
+    "name_en": "Lux",
+    "name_zh_tw": "拉克絲",
+    "name_zh_cn": "光辉女郎",
+    "internal_name": "Lux"
+  },
+  "54": {
+    "id": 54,
+    "name_en": "Malphite",
+    "name_zh_tw": "墨菲特",
+    "name_zh_cn": "熔岩巨兽",
+    "internal_name": "Malphite"
+  },
+  "90": {
+    "id": 90,
+    "name_en": "Malzahar",
+    "name_zh_tw": "馬爾札哈",
+    "name_zh_cn": "虚空先知",
+    "internal_name": "Malzahar"
+  },
+  "57": {
+    "id": 57,
+    "name_en": "Maokai",
+    "name_zh_tw": "茂凱",
+    "name_zh_cn": "扭曲树精",
+    "internal_name": "Maokai"
+  },
+  "11": {
+    "id": 11,
+    "name_en": "Master Yi",
+    "name_zh_tw": "易大師",
+    "name_zh_cn": "无极剑圣",
+    "internal_name": "MasterYi"
+  },
+  "800": {
+    "id": 800,
+    "name_en": "Mel",
+    "name_zh_tw": "梅爾",
+    "name_zh_cn": "流光镜影",
+    "internal_name": "Mel"
+  },
+  "902": {
+    "id": 902,
+    "name_en": "Milio",
+    "name_zh_tw": "米里歐",
+    "name_zh_cn": "明烛",
+    "internal_name": "Milio"
+  },
+  "21": {
+    "id": 21,
+    "name_en": "Miss Fortune",
+    "name_zh_tw": "好運姐",
+    "name_zh_cn": "赏金猎人",
+    "internal_name": "MissFortune"
+  },
+  "62": {
+    "id": 62,
+    "name_en": "Wukong",
+    "name_zh_tw": "悟空",
+    "name_zh_cn": "齐天大圣",
+    "internal_name": "MonkeyKing"
+  },
+  "82": {
+    "id": 82,
+    "name_en": "Mordekaiser",
+    "name_zh_tw": "魔鬥凱薩",
+    "name_zh_cn": "铁铠冥魂",
+    "internal_name": "Mordekaiser"
+  },
+  "25": {
+    "id": 25,
+    "name_en": "Morgana",
+    "name_zh_tw": "魔甘娜",
+    "name_zh_cn": "堕落天使",
+    "internal_name": "Morgana"
+  },
+  "950": {
+    "id": 950,
+    "name_en": "Naafiri",
+    "name_zh_tw": "娜菲芮",
+    "name_zh_cn": "百裂冥犬",
+    "internal_name": "Naafiri"
+  },
+  "267": {
+    "id": 267,
+    "name_en": "Nami",
+    "name_zh_tw": "娜米",
+    "name_zh_cn": "唤潮鲛姬",
+    "internal_name": "Nami"
+  },
+  "75": {
+    "id": 75,
+    "name_en": "Nasus",
+    "name_zh_tw": "納瑟斯",
+    "name_zh_cn": "沙漠死神",
+    "internal_name": "Nasus"
+  },
+  "111": {
+    "id": 111,
+    "name_en": "Nautilus",
+    "name_zh_tw": "納帝魯斯",
+    "name_zh_cn": "深海泰坦",
+    "internal_name": "Nautilus"
+  },
+  "518": {
+    "id": 518,
+    "name_en": "Neeko",
+    "name_zh_tw": "妮可",
+    "name_zh_cn": "万花通灵",
+    "internal_name": "Neeko"
+  },
+  "76": {
+    "id": 76,
+    "name_en": "Nidalee",
+    "name_zh_tw": "奈德麗",
+    "name_zh_cn": "狂野女猎手",
+    "internal_name": "Nidalee"
+  },
+  "895": {
+    "id": 895,
+    "name_en": "Nilah",
+    "name_zh_tw": "淣菈",
+    "name_zh_cn": "不羁之悦",
+    "internal_name": "Nilah"
+  },
+  "56": {
+    "id": 56,
+    "name_en": "Nocturne",
+    "name_zh_tw": "夜曲",
+    "name_zh_cn": "永恒梦魇",
+    "internal_name": "Nocturne"
+  },
+  "20": {
+    "id": 20,
+    "name_en": "Nunu & Willump",
+    "name_zh_tw": "努努和威朗普",
+    "name_zh_cn": "雪原双子",
+    "internal_name": "Nunu"
+  },
+  "2": {
+    "id": 2,
+    "name_en": "Olaf",
+    "name_zh_tw": "歐拉夫",
+    "name_zh_cn": "狂战士",
+    "internal_name": "Olaf"
+  },
+  "61": {
+    "id": 61,
+    "name_en": "Orianna",
+    "name_zh_tw": "奧莉安娜",
+    "name_zh_cn": "发条魔灵",
+    "internal_name": "Orianna"
+  },
+  "516": {
+    "id": 516,
+    "name_en": "Ornn",
+    "name_zh_tw": "鄂爾",
+    "name_zh_cn": "山隐之焰",
+    "internal_name": "Ornn"
+  },
+  "80": {
+    "id": 80,
+    "name_en": "Pantheon",
+    "name_zh_tw": "潘森",
+    "name_zh_cn": "不屈之枪",
+    "internal_name": "Pantheon"
+  },
+  "78": {
+    "id": 78,
+    "name_en": "Poppy",
+    "name_zh_tw": "波比",
+    "name_zh_cn": "圣锤之毅",
+    "internal_name": "Poppy"
+  },
+  "555": {
+    "id": 555,
+    "name_en": "Pyke",
+    "name_zh_tw": "派克",
+    "name_zh_cn": "血港鬼影",
+    "internal_name": "Pyke"
+  },
+  "246": {
+    "id": 246,
+    "name_en": "Qiyana",
+    "name_zh_tw": "姬亞娜",
+    "name_zh_cn": "元素女皇",
+    "internal_name": "Qiyana"
+  },
+  "133": {
+    "id": 133,
+    "name_en": "Quinn",
+    "name_zh_tw": "葵恩",
+    "name_zh_cn": "德玛西亚之翼",
+    "internal_name": "Quinn"
+  },
+  "497": {
+    "id": 497,
+    "name_en": "Rakan",
+    "name_zh_tw": "銳空",
+    "name_zh_cn": "幻翎",
+    "internal_name": "Rakan"
+  },
+  "33": {
+    "id": 33,
+    "name_en": "Rammus",
+    "name_zh_tw": "拉姆斯",
+    "name_zh_cn": "披甲龙龟",
+    "internal_name": "Rammus"
+  },
+  "421": {
+    "id": 421,
+    "name_en": "Rek'Sai",
+    "name_zh_tw": "雷珂煞",
+    "name_zh_cn": "虚空遁地兽",
+    "internal_name": "RekSai"
+  },
+  "526": {
+    "id": 526,
+    "name_en": "Rell",
+    "name_zh_tw": "銳兒",
+    "name_zh_cn": "镕铁少女",
+    "internal_name": "Rell"
+  },
+  "888": {
+    "id": 888,
+    "name_en": "Renata Glasc",
+    "name_zh_tw": "睿娜妲‧格萊斯克",
+    "name_zh_cn": "炼金男爵",
+    "internal_name": "Renata"
+  },
+  "58": {
+    "id": 58,
+    "name_en": "Renekton",
+    "name_zh_tw": "雷尼克頓",
+    "name_zh_cn": "荒漠屠夫",
+    "internal_name": "Renekton"
+  },
+  "107": {
+    "id": 107,
+    "name_en": "Rengar",
+    "name_zh_tw": "雷葛爾",
+    "name_zh_cn": "傲之追猎者",
+    "internal_name": "Rengar"
+  },
+  "92": {
+    "id": 92,
+    "name_en": "Riven",
+    "name_zh_tw": "雷玟",
+    "name_zh_cn": "放逐之刃",
+    "internal_name": "Riven"
+  },
+  "68": {
+    "id": 68,
+    "name_en": "Rumble",
+    "name_zh_tw": "藍寶",
+    "name_zh_cn": "机械公敌",
+    "internal_name": "Rumble"
+  },
+  "13": {
+    "id": 13,
+    "name_en": "Ryze",
+    "name_zh_tw": "雷茲",
+    "name_zh_cn": "符文法师",
+    "internal_name": "Ryze"
+  },
+  "360": {
+    "id": 360,
+    "name_en": "Samira",
+    "name_zh_tw": "煞蜜拉",
+    "name_zh_cn": "沙漠玫瑰",
+    "internal_name": "Samira"
+  },
+  "113": {
+    "id": 113,
+    "name_en": "Sejuani",
+    "name_zh_tw": "史瓦妮",
+    "name_zh_cn": "北地之怒",
+    "internal_name": "Sejuani"
+  },
+  "235": {
+    "id": 235,
+    "name_en": "Senna",
+    "name_zh_tw": "姍娜",
+    "name_zh_cn": "涤魂圣枪",
+    "internal_name": "Senna"
+  },
+  "147": {
+    "id": 147,
+    "name_en": "Seraphine",
+    "name_zh_tw": "瑟菈紛",
+    "name_zh_cn": "星籁歌姬",
+    "internal_name": "Seraphine"
+  },
+  "875": {
+    "id": 875,
+    "name_en": "Sett",
+    "name_zh_tw": "賽特",
+    "name_zh_cn": "腕豪",
+    "internal_name": "Sett"
+  },
+  "35": {
+    "id": 35,
+    "name_en": "Shaco",
+    "name_zh_tw": "薩科",
+    "name_zh_cn": "恶魔小丑",
+    "internal_name": "Shaco"
+  },
+  "98": {
+    "id": 98,
+    "name_en": "Shen",
+    "name_zh_tw": "慎",
+    "name_zh_cn": "暮光之眼",
+    "internal_name": "Shen"
+  },
+  "102": {
+    "id": 102,
+    "name_en": "Shyvana",
+    "name_zh_tw": "希瓦娜",
+    "name_zh_cn": "龙血武姬",
+    "internal_name": "Shyvana"
+  },
+  "27": {
+    "id": 27,
+    "name_en": "Singed",
+    "name_zh_tw": "辛吉德",
+    "name_zh_cn": "炼金术士",
+    "internal_name": "Singed"
+  },
+  "14": {
+    "id": 14,
+    "name_en": "Sion",
+    "name_zh_tw": "賽恩",
+    "name_zh_cn": "亡灵战神",
+    "internal_name": "Sion"
+  },
+  "15": {
+    "id": 15,
+    "name_en": "Sivir",
+    "name_zh_tw": "希維爾",
+    "name_zh_cn": "战争女神",
+    "internal_name": "Sivir"
+  },
+  "72": {
+    "id": 72,
+    "name_en": "Skarner",
+    "name_zh_tw": "史加納",
+    "name_zh_cn": "上古领主",
+    "internal_name": "Skarner"
+  },
+  "901": {
+    "id": 901,
+    "name_en": "Smolder",
+    "name_zh_tw": "史矛德",
+    "name_zh_cn": "炽炎雏龙",
+    "internal_name": "Smolder"
+  },
+  "37": {
+    "id": 37,
+    "name_en": "Sona",
+    "name_zh_tw": "索娜",
+    "name_zh_cn": "琴瑟仙女",
+    "internal_name": "Sona"
+  },
+  "16": {
+    "id": 16,
+    "name_en": "Soraka",
+    "name_zh_tw": "索拉卡",
+    "name_zh_cn": "众星之子",
+    "internal_name": "Soraka"
+  },
+  "50": {
+    "id": 50,
+    "name_en": "Swain",
+    "name_zh_tw": "斯溫",
+    "name_zh_cn": "诺克萨斯统领",
+    "internal_name": "Swain"
+  },
+  "517": {
+    "id": 517,
+    "name_en": "Sylas",
+    "name_zh_tw": "賽勒斯",
+    "name_zh_cn": "解脱者",
+    "internal_name": "Sylas"
+  },
+  "134": {
+    "id": 134,
+    "name_en": "Syndra",
+    "name_zh_tw": "星朵拉",
+    "name_zh_cn": "暗黑元首",
+    "internal_name": "Syndra"
+  },
+  "223": {
+    "id": 223,
+    "name_en": "Tahm Kench",
+    "name_zh_tw": "貪啃奇",
+    "name_zh_cn": "河流之王",
+    "internal_name": "TahmKench"
+  },
+  "163": {
+    "id": 163,
+    "name_en": "Taliyah",
+    "name_zh_tw": "塔莉雅",
+    "name_zh_cn": "岩雀",
+    "internal_name": "Taliyah"
+  },
+  "91": {
+    "id": 91,
+    "name_en": "Talon",
+    "name_zh_tw": "塔隆",
+    "name_zh_cn": "刀锋之影",
+    "internal_name": "Talon"
+  },
+  "44": {
+    "id": 44,
+    "name_en": "Taric",
+    "name_zh_tw": "塔里克",
+    "name_zh_cn": "瓦洛兰之盾",
+    "internal_name": "Taric"
+  },
+  "17": {
+    "id": 17,
+    "name_en": "Teemo",
+    "name_zh_tw": "提摩",
+    "name_zh_cn": "迅捷斥候",
+    "internal_name": "Teemo"
+  },
+  "412": {
+    "id": 412,
+    "name_en": "Thresh",
+    "name_zh_tw": "瑟雷西",
+    "name_zh_cn": "魂锁典狱长",
+    "internal_name": "Thresh"
+  },
+  "18": {
+    "id": 18,
+    "name_en": "Tristana",
+    "name_zh_tw": "崔絲塔娜",
+    "name_zh_cn": "麦林炮手",
+    "internal_name": "Tristana"
+  },
+  "48": {
+    "id": 48,
+    "name_en": "Trundle",
+    "name_zh_tw": "特朗德",
+    "name_zh_cn": "巨魔之王",
+    "internal_name": "Trundle"
+  },
+  "23": {
+    "id": 23,
+    "name_en": "Tryndamere",
+    "name_zh_tw": "泰達米爾",
+    "name_zh_cn": "蛮族之王",
+    "internal_name": "Tryndamere"
+  },
+  "4": {
+    "id": 4,
+    "name_en": "Twisted Fate",
+    "name_zh_tw": "逆命",
+    "name_zh_cn": "卡牌大师",
+    "internal_name": "TwistedFate"
+  },
+  "29": {
+    "id": 29,
+    "name_en": "Twitch",
+    "name_zh_tw": "圖奇",
+    "name_zh_cn": "瘟疫之源",
+    "internal_name": "Twitch"
+  },
+  "77": {
+    "id": 77,
+    "name_en": "Udyr",
+    "name_zh_tw": "烏迪爾",
+    "name_zh_cn": "兽灵行者",
+    "internal_name": "Udyr"
+  },
+  "6": {
+    "id": 6,
+    "name_en": "Urgot",
+    "name_zh_tw": "烏爾加特",
+    "name_zh_cn": "无畏战车",
+    "internal_name": "Urgot"
+  },
+  "110": {
+    "id": 110,
+    "name_en": "Varus",
+    "name_zh_tw": "法洛士",
+    "name_zh_cn": "惩戒之箭",
+    "internal_name": "Varus"
+  },
+  "67": {
+    "id": 67,
+    "name_en": "Vayne",
+    "name_zh_tw": "汎",
+    "name_zh_cn": "暗夜猎手",
+    "internal_name": "Vayne"
+  },
+  "45": {
+    "id": 45,
+    "name_en": "Veigar",
+    "name_zh_tw": "維迦",
+    "name_zh_cn": "邪恶小法师",
+    "internal_name": "Veigar"
+  },
+  "161": {
+    "id": 161,
+    "name_en": "Vel'Koz",
+    "name_zh_tw": "威寇茲",
+    "name_zh_cn": "虚空之眼",
+    "internal_name": "Velkoz"
+  },
+  "711": {
+    "id": 711,
+    "name_en": "Vex",
+    "name_zh_tw": "薇可絲",
+    "name_zh_cn": "愁云使者",
+    "internal_name": "Vex"
+  },
+  "254": {
+    "id": 254,
+    "name_en": "Vi",
+    "name_zh_tw": "菲艾",
+    "name_zh_cn": "皮城执法官",
+    "internal_name": "Vi"
+  },
+  "234": {
+    "id": 234,
+    "name_en": "Viego",
+    "name_zh_tw": "維爾戈",
+    "name_zh_cn": "破败之王",
+    "internal_name": "Viego"
+  },
+  "112": {
+    "id": 112,
+    "name_en": "Viktor",
+    "name_zh_tw": "維克特",
+    "name_zh_cn": "奥术先驱",
+    "internal_name": "Viktor"
+  },
+  "8": {
+    "id": 8,
+    "name_en": "Vladimir",
+    "name_zh_tw": "弗拉迪米爾",
+    "name_zh_cn": "猩红收割者",
+    "internal_name": "Vladimir"
+  },
+  "106": {
+    "id": 106,
+    "name_en": "Volibear",
+    "name_zh_tw": "弗力貝爾",
+    "name_zh_cn": "不灭狂雷",
+    "internal_name": "Volibear"
+  },
+  "19": {
+    "id": 19,
+    "name_en": "Warwick",
+    "name_zh_tw": "沃維克",
+    "name_zh_cn": "祖安怒兽",
+    "internal_name": "Warwick"
+  },
+  "498": {
+    "id": 498,
+    "name_en": "Xayah",
+    "name_zh_tw": "剎雅",
+    "name_zh_cn": "逆羽",
+    "internal_name": "Xayah"
+  },
+  "101": {
+    "id": 101,
+    "name_en": "Xerath",
+    "name_zh_tw": "齊勒斯",
+    "name_zh_cn": "远古巫灵",
+    "internal_name": "Xerath"
+  },
+  "5": {
+    "id": 5,
+    "name_en": "Xin Zhao",
+    "name_zh_tw": "趙信",
+    "name_zh_cn": "德邦总管",
+    "internal_name": "XinZhao"
+  },
+  "157": {
+    "id": 157,
+    "name_en": "Yasuo",
+    "name_zh_tw": "犽宿",
+    "name_zh_cn": "疾风剑豪",
+    "internal_name": "Yasuo"
+  },
+  "777": {
+    "id": 777,
+    "name_en": "Yone",
+    "name_zh_tw": "犽凝",
+    "name_zh_cn": "封魔剑魂",
+    "internal_name": "Yone"
+  },
+  "83": {
+    "id": 83,
+    "name_en": "Yorick",
+    "name_zh_tw": "約瑞科",
+    "name_zh_cn": "牧魂人",
+    "internal_name": "Yorick"
+  },
+  "804": {
+    "id": 804,
+    "name_en": "Yunara",
+    "name_zh_tw": "尤娜拉",
+    "name_zh_cn": "不破之誓",
+    "internal_name": "Yunara"
+  },
+  "350": {
+    "id": 350,
+    "name_en": "Yuumi",
+    "name_zh_tw": "悠咪",
+    "name_zh_cn": "魔法猫咪",
+    "internal_name": "Yuumi"
+  },
+  "904": {
+    "id": 904,
+    "name_en": "Zaahen",
+    "name_zh_tw": "薩亨",
+    "name_zh_cn": "不落魔锋",
+    "internal_name": "Zaahen"
+  },
+  "154": {
+    "id": 154,
+    "name_en": "Zac",
+    "name_zh_tw": "札克",
+    "name_zh_cn": "生化魔人",
+    "internal_name": "Zac"
+  },
+  "238": {
+    "id": 238,
+    "name_en": "Zed",
+    "name_zh_tw": "劫",
+    "name_zh_cn": "影流之主",
+    "internal_name": "Zed"
+  },
+  "221": {
+    "id": 221,
+    "name_en": "Zeri",
+    "name_zh_tw": "婕莉",
+    "name_zh_cn": "祖安花火",
+    "internal_name": "Zeri"
+  },
+  "115": {
+    "id": 115,
+    "name_en": "Ziggs",
+    "name_zh_tw": "希格斯",
+    "name_zh_cn": "爆破鬼才",
+    "internal_name": "Ziggs"
+  },
+  "26": {
+    "id": 26,
+    "name_en": "Zilean",
+    "name_zh_tw": "極靈",
+    "name_zh_cn": "时光守护者",
+    "internal_name": "Zilean"
+  },
+  "142": {
+    "id": 142,
+    "name_en": "Zoe",
+    "name_zh_tw": "柔依",
+    "name_zh_cn": "暮光星灵",
+    "internal_name": "Zoe"
+  },
+  "143": {
+    "id": 143,
+    "name_en": "Zyra",
+    "name_zh_tw": "枷蘿",
+    "name_zh_cn": "荆棘之兴",
+    "internal_name": "Zyra"
+  }
+}

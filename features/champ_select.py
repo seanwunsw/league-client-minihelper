@@ -4,6 +4,7 @@ import time
 import threading
 from typing import Optional, Dict, Any, List, Set
 from features.base_feature import BaseFeature
+from features.champion_data import ChampionDataProvider
 from features.champ_select_logic import (
     get_assigned_position,
     flatten_actions,
@@ -48,6 +49,7 @@ class ChampSelectFeature(BaseFeature):
         
         # State tracking
         self.processed_actions = set()  # Track action IDs we've already processed
+        self.champion_provider = ChampionDataProvider()
         self.champion_map = {}  # name -> id mapping
         self.champion_reverse_map = {}  # id -> name mapping
         self.last_session_state = None
@@ -77,33 +79,25 @@ class ChampSelectFeature(BaseFeature):
             return
         
         try:
-            # Try champion-summary.json first (more comprehensive)
+            # Get client's champion-summary first
+            client_champions = []
             response = self.api_client.get('/lol-game-data/assets/v1/champion-summary.json')
             if response and isinstance(response, list):
-                for champ in response:
-                    champ_id = champ.get('id', 0)
-                    name = champ.get('name', '')
-                    if champ_id > 0 and name:
-                        self.champion_map[name.lower()] = champ_id
-                        self.champion_reverse_map[champ_id] = name
-                
-                logger.info(f"Loaded {len(self.champion_map)} champions from champion-summary.json")
-                return
-        except Exception as e:
-            logger.debug(f"Failed to load champion-summary.json: {e}")
-        
-        # Fallback to owned-champions-minimal
-        try:
-            response = self.api_client.get('/lol-champions/v1/owned-champions-minimal')
-            if response and isinstance(response, list):
-                for champ in response:
-                    champ_id = champ.get('id', 0)
-                    name = champ.get('name', '')
-                    if champ_id > 0 and name:
-                        self.champion_map[name.lower()] = champ_id
-                        self.champion_reverse_map[champ_id] = name
-                
-                logger.info(f"Loaded {len(self.champion_map)} champions from owned-champions-minimal")
+                client_champions = response
+                logger.info(f"Got {len(client_champions)} champions from client")
+            
+            # Fetch bilingual champion data
+            champion_data = self.champion_provider.fetch_champion_data(client_champions)
+            
+            # Build legacy maps for compatibility
+            for champ_id, champ_info in champion_data.items():
+                name_en = champ_info.get('name_en', '')
+                if name_en:
+                    self.champion_map[name_en.lower()] = champ_id
+                    self.champion_reverse_map[champ_id] = name_en
+            
+            logger.info(f"Loaded {len(champion_data)} champions with bilingual support")
+            
         except Exception as e:
             logger.warning(f"Failed to load champion data: {e}")
     
@@ -162,8 +156,17 @@ class ChampSelectFeature(BaseFeature):
     def _handle_planning_hover(self, session: Dict[str, Any], local_player_cell_id: int):
         """Hover top pick during PLANNING phase."""
         position = get_assigned_position(session, local_player_cell_id)
-        preferences = self.role_preferences.get(position, {})
+        role_to_use = position if position else 'default'
+        
+        preferences = self.role_preferences.get(role_to_use, {})
         pick_candidates = preferences.get('picks', [])
+        
+        # Fall back to default if role list is empty
+        if not pick_candidates and role_to_use != 'default':
+            logger.info(f"No picks for {role_to_use}, falling back to default")
+            role_to_use = 'default'
+            preferences = self.role_preferences.get('default', {})
+            pick_candidates = preferences.get('picks', [])
         
         if not pick_candidates:
             return
@@ -186,8 +189,8 @@ class ChampSelectFeature(BaseFeature):
         
         if available and available[0] != self.current_hover:
             champ_id = available[0]
-            champ_name = self.champion_reverse_map.get(champ_id, f'Champion {champ_id}')
-            logger.info(f"PLANNING phase: hovering {champ_name} (position: {position})")
+            champ_name = self.champion_provider.get_display_name(champ_id)
+            logger.info(f"PLANNING phase: hovering {champ_name} (assigned role: {position or 'none'}, using {role_to_use.capitalize()} list)")
             
             # Hover via any pick action (doesn't have to be ours)
             actions = flatten_actions(session)
@@ -206,14 +209,24 @@ class ChampSelectFeature(BaseFeature):
         """Handle ban action."""
         action_id = action['id']
         position = get_assigned_position(session, local_player_cell_id)
+        role_to_use = position if position else 'default'
         
-        preferences = self.role_preferences.get(position, {})
+        preferences = self.role_preferences.get(role_to_use, {})
         ban_candidates = preferences.get('bans', [])
         
+        # Fall back to default if role list is empty
+        if not ban_candidates and role_to_use != 'default':
+            logger.info(f"No bans for {role_to_use}, falling back to default")
+            role_to_use = 'default'
+            preferences = self.role_preferences.get('default', {})
+            ban_candidates = preferences.get('bans', [])
+        
         if not ban_candidates:
-            logger.info(f"No ban preferences for position '{position}', skipping auto-ban")
+            logger.info(f"No ban preferences, skipping auto-ban")
             self.processed_actions.add(action_id)
             return
+        
+        logger.info(f"Champ select: assigned role = {position or 'none'}, using {role_to_use.capitalize()} list")
         
         # Get available bans
         bannable_ids = self._get_bannable_champions()
@@ -232,19 +245,19 @@ class ChampSelectFeature(BaseFeature):
         )
         
         if not available:
-            logger.info(f"No available bans from preferences (position: {position}), skipping")
+            logger.info(f"No available bans from preferences, skipping")
             self.processed_actions.add(action_id)
             return
         
         # Try each candidate
         for champ_id in available:
-            champ_name = self.champion_reverse_map.get(champ_id, f'Champion {champ_id}')
-            logger.info(f"Auto-banning {champ_name} (position: {position})")
+            champ_name = self.champion_provider.get_display_name(champ_id)
+            logger.info(f"Auto-banning {champ_name}")
             
             time.sleep(self.ban_delay)
             
             if self._patch_action(action_id, champ_id, completed=True):
-                logger.info(f"✓ Successfully banned {champ_name}")
+                logger.info(f"[OK] Successfully banned {champ_name}")
                 self.processed_actions.add(action_id)
                 return
             else:
@@ -262,14 +275,24 @@ class ChampSelectFeature(BaseFeature):
         """Handle pick action."""
         action_id = action['id']
         position = get_assigned_position(session, local_player_cell_id)
+        role_to_use = position if position else 'default'
         
-        preferences = self.role_preferences.get(position, {})
+        preferences = self.role_preferences.get(role_to_use, {})
         pick_candidates = preferences.get('picks', [])
         
+        # Fall back to default if role list is empty
+        if not pick_candidates and role_to_use != 'default':
+            logger.info(f"No picks for {role_to_use}, falling back to default")
+            role_to_use = 'default'
+            preferences = self.role_preferences.get('default', {})
+            pick_candidates = preferences.get('picks', [])
+        
         if not pick_candidates:
-            logger.info(f"No pick preferences for position '{position}', skipping auto-pick")
+            logger.info(f"No pick preferences, skipping auto-pick")
             self.processed_actions.add(action_id)
             return
+        
+        logger.info(f"Champ select: assigned role = {position or 'none'}, using {role_to_use.capitalize()} list")
         
         # Get available picks
         pickable_ids = self._get_pickable_champions()
@@ -288,20 +311,20 @@ class ChampSelectFeature(BaseFeature):
         )
         
         if not available:
-            logger.info(f"No available picks from preferences (position: {position}), skipping")
+            logger.info(f"No available picks from preferences, skipping")
             self.processed_actions.add(action_id)
             return
         
         # Try each candidate
         for champ_id in available:
-            champ_name = self.champion_reverse_map.get(champ_id, f'Champion {champ_id}')
+            champ_name = self.champion_provider.get_display_name(champ_id)
             
             if self.pick_mode == 'lock':
-                logger.info(f"Auto-picking and locking {champ_name} (position: {position})")
+                logger.info(f"Auto-picking and locking {champ_name}")
                 time.sleep(self.pick_delay)
                 
                 if self._patch_action(action_id, champ_id, completed=True):
-                    logger.info(f"✓ Successfully picked and locked {champ_name}")
+                    logger.info(f"[OK] Successfully picked and locked {champ_name}")
                     self.processed_actions.add(action_id)
                     self.current_hover = None
                     return
@@ -309,11 +332,11 @@ class ChampSelectFeature(BaseFeature):
                     logger.warning(f"Failed to lock {champ_id}, trying next candidate...")
             else:
                 # Hover mode
-                logger.info(f"Auto-hovering {champ_name} (position: {position})")
+                logger.info(f"Auto-hovering {champ_name}")
                 time.sleep(self.pick_delay)
                 
                 if self._patch_action(action_id, champ_id, completed=False):
-                    logger.info(f"✓ Successfully hovered {champ_name}")
+                    logger.info(f"[OK] Successfully hovered {champ_name}")
                     self.processed_actions.add(action_id)
                     self.current_hover = champ_id
                     return
@@ -450,11 +473,14 @@ class ChampSelectFeature(BaseFeature):
         }
     
     def get_champion_list(self) -> List[Dict[str, Any]]:
-        """Get champion list for UI."""
+        """Get champion list for UI with bilingual names."""
         champions = []
-        for champ_id, name in sorted(self.champion_reverse_map.items(), key=lambda x: x[1]):
+        champion_data = self.champion_provider.champion_data
+        
+        for champ_id in sorted(champion_data.keys(), key=lambda x: champion_data[x].get('name_en', '')):
             champions.append({
                 'id': champ_id,
-                'name': name
+                'name': self.champion_provider.get_display_name(champ_id)
             })
+        
         return champions

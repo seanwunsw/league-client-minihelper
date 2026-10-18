@@ -12,8 +12,11 @@ a = Analysis(
         ('ui/index.html', 'ui'),
         ('ui/style.css', 'ui'),
         ('ui/app.js', 'ui'),
+        ('ui/combobox.css', 'ui'),
+        ('ui/combobox.js', 'ui'),
         ('assets/icon.ico', 'assets'),
         ('assets/icon_square.png', 'assets'),
+        ('data/champion_data_fallback.json', 'data'),
     ],
     hiddenimports=[
         'websocket',

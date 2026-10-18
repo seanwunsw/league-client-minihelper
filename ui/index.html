@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LoL Auto-Accept</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="combobox.css">
 </head>
 <body>
     <div class="container">
@@ -80,15 +81,15 @@
                     <div class="champ-lists">
                         <div class="champ-list">
                             <h3>Bans (Priority)</h3>
-                            <select class="champ-select" data-type="ban" data-priority="1"><option value="">None</option></select>
-                            <select class="champ-select" data-type="ban" data-priority="2"><option value="">None</option></select>
-                            <select class="champ-select" data-type="ban" data-priority="3"><option value="">None</option></select>
+                            <div class="combobox-container" data-type="ban" data-priority="1"></div>
+                            <div class="combobox-container" data-type="ban" data-priority="2"></div>
+                            <div class="combobox-container" data-type="ban" data-priority="3"></div>
                         </div>
                         <div class="champ-list">
                             <h3>Picks (Priority)</h3>
-                            <select class="champ-select" data-type="pick" data-priority="1"><option value="">None</option></select>
-                            <select class="champ-select" data-type="pick" data-priority="2"><option value="">None</option></select>
-                            <select class="champ-select" data-type="pick" data-priority="3"><option value="">None</option></select>
+                            <div class="combobox-container" data-type="pick" data-priority="1"></div>
+                            <div class="combobox-container" data-type="pick" data-priority="2"></div>
+                            <div class="combobox-container" data-type="pick" data-priority="3"></div>
                         </div>
                     </div>
                 </div>
@@ -100,6 +101,7 @@
             <div id="log-view" class="log-view"></div>
         </section>
     </div>
+    <script src="combobox.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

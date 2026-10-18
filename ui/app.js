@@ -9,6 +9,7 @@ let logs = [];
 const MAX_LOGS = 100;
 let currentRole = 'default';
 let champions = [];
+let comboboxes = {}; // Store combobox instances by key
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -46,12 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Champion select dropdowns
-    document.querySelectorAll('.champ-select').forEach(select => {
-        select.addEventListener('change', (e) => {
-            saveRolePreferences();
-        });
-    });
+    // Initialize comboboxes
+    initializeComboboxes();
     
     // Clear log button
     document.getElementById('clear-log').addEventListener('click', () => {
@@ -71,6 +68,25 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateState, 1000);
     updateState();
 });
+
+// Initialize comboboxes
+function initializeComboboxes() {
+    document.querySelectorAll('.combobox-container').forEach(container => {
+        const type = container.dataset.type;
+        const priority = container.dataset.priority;
+        const key = `${type}-${priority}`;
+        
+        const combobox = new Combobox(container, {
+            placeholder: `${type.charAt(0).toUpperCase() + type.slice(1)} #${priority}`,
+            options: [],
+            onChange: (value) => {
+                saveRolePreferences();
+            }
+        });
+        
+        comboboxes[key] = combobox;
+    });
+}
 
 // Update state from backend
 function updateState() {
@@ -133,7 +149,7 @@ function loadChampions() {
     const champSelectFeature = state.features.find(f => f.name === 'Champion Select');
     if (champSelectFeature && champSelectFeature.status && champSelectFeature.status.champions) {
         champions = champSelectFeature.status.champions;
-        updateChampionDropdowns();
+        updateComboboxOptions();
         
         // Also render preferences after champions are loaded
         if (champSelectFeature.settings && champSelectFeature.settings.role_preferences) {
@@ -142,23 +158,16 @@ function loadChampions() {
     }
 }
 
-// Update all champion dropdowns
-function updateChampionDropdowns() {
-    document.querySelectorAll('.champ-select').forEach(select => {
-        const currentValue = select.value;
-        select.innerHTML = '<option value="">None</option>';
-        
-        champions.forEach(champ => {
-            const option = document.createElement('option');
-            option.value = champ.id;
-            option.textContent = champ.name;
-            select.appendChild(option);
-        });
-        
-        // Restore previous selection if valid
-        if (currentValue) {
-            select.value = currentValue;
-        }
+// Update combobox options
+function updateComboboxOptions() {
+    const options = champions.map(champ => ({
+        value: champ.id,
+        label: champ.name
+    }));
+    
+    // Update all comboboxes
+    Object.values(comboboxes).forEach(combobox => {
+        combobox.setOptions(options);
     });
 }
 
@@ -184,27 +193,25 @@ function renderRolePreferences(rolePrefs) {
     
     const prefs = rolePrefs[currentRole];
     
-    // Update ban dropdowns
-    const banSelects = document.querySelectorAll('.champ-select[data-type="ban"]');
-    banSelects.forEach((select, index) => {
-        const priority = index + 1;
-        if (prefs.bans && prefs.bans[index]) {
-            select.value = prefs.bans[index];
-        } else {
-            select.value = '';
+    // Update ban comboboxes
+    for (let i = 1; i <= 3; i++) {
+        const key = `ban-${i}`;
+        const combobox = comboboxes[key];
+        if (combobox) {
+            const value = prefs.bans && prefs.bans[i - 1] ? prefs.bans[i - 1] : null;
+            combobox.setValue(value);
         }
-    });
+    }
     
-    // Update pick dropdowns
-    const pickSelects = document.querySelectorAll('.champ-select[data-type="pick"]');
-    pickSelects.forEach((select, index) => {
-        const priority = index + 1;
-        if (prefs.picks && prefs.picks[index]) {
-            select.value = prefs.picks[index];
-        } else {
-            select.value = '';
+    // Update pick comboboxes
+    for (let i = 1; i <= 3; i++) {
+        const key = `pick-${i}`;
+        const combobox = comboboxes[key];
+        if (combobox) {
+            const value = prefs.picks && prefs.picks[i - 1] ? prefs.picks[i - 1] : null;
+            combobox.setValue(value);
         }
-    });
+    }
 }
 
 // Save role preferences
@@ -216,18 +223,18 @@ function saveRolePreferences() {
     
     const rolePrefs = JSON.parse(JSON.stringify(champSelectFeature.settings.role_preferences));
     
-    // Get current role prefs
+    // Get current role prefs from comboboxes
     const bans = [];
-    document.querySelectorAll('.champ-select[data-type="ban"]').forEach(select => {
-        const value = parseInt(select.value);
+    for (let i = 1; i <= 3; i++) {
+        const value = comboboxes[`ban-${i}`]?.getValue();
         if (value) bans.push(value);
-    });
+    }
     
     const picks = [];
-    document.querySelectorAll('.champ-select[data-type="pick"]').forEach(select => {
-        const value = parseInt(select.value);
+    for (let i = 1; i <= 3; i++) {
+        const value = comboboxes[`pick-${i}`]?.getValue();
         if (value) picks.push(value);
-    });
+    }
     
     rolePrefs[currentRole] = { bans, picks };
     
