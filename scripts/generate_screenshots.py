@@ -269,7 +269,7 @@ def generate_screenshots():
                     # Allow small overflow for rounding
                     assert scroll_height <= window_height + 5, f"Content does not fit in viewport for {state_name}"
                 else:
-                    print(f"  ✓ Content fits without scrolling")
+                    print(f"  [OK] Content fits without scrolling")
             
             # Take screenshot
             screenshot_path = screenshots_dir / f'{state_name}.png'
