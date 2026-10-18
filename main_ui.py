@@ -284,7 +284,7 @@ def ipc_server_thread(ipc_socket):
                             f'file://{ui_path}',
                             js_api=api,
                             width=750,
-                            height=800,
+                            height=900,
                             resizable=True,
                             min_size=(600, 600)
                         )
@@ -360,7 +360,7 @@ def create_tray_icon():
             f'file://{ui_path}',
             js_api=api,
             width=750,
-            height=800,
+            height=900,
             resizable=True,
             min_size=(600, 600)
         )
@@ -469,7 +469,7 @@ def webview_thread_main(config, logger):
                 f'file://{ui_path}',
                 js_api=api,
                 width=750,
-                height=800,
+                height=900,
                 resizable=True,
                 min_size=(600, 700)
             )

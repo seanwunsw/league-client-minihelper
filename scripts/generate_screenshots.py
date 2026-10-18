@@ -220,7 +220,7 @@ def generate_screenshots():
         for state_name, state_data in STATES.items():
             print(f"Generating screenshot for {state_name}...")
             
-            page = browser.new_page(viewport={'width': 750, 'height': 800})
+            page = browser.new_page(viewport={'width': 750, 'height': 900})
             
             # Mock window.pywebview.api
             page.add_init_script(f"""
@@ -244,6 +244,32 @@ def generate_screenshots():
             
             # Wait for content to load
             page.wait_for_timeout(1000)
+            
+            # For connected and champ_select states, verify dropdowns are visible
+            if state_name in ['connected', 'champ_select']:
+                # Wait for champion select dropdowns to be present
+                page.wait_for_selector('.champ-select', timeout=5000)
+                
+                # Check that ban/pick selects are visible in viewport
+                ban_selects = page.locator('.champ-select[data-type="ban"]')
+                pick_selects = page.locator('.champ-select[data-type="pick"]')
+                
+                # Verify at least one ban and one pick select is visible
+                assert ban_selects.first.is_visible(), f"Ban selects not visible in {state_name}"
+                assert pick_selects.first.is_visible(), f"Pick selects not visible in {state_name}"
+                
+                # Check that content fits without scrolling
+                scroll_height = page.evaluate('document.documentElement.scrollHeight')
+                window_height = page.evaluate('window.innerHeight')
+                
+                print(f"  Scroll height: {scroll_height}px, Window height: {window_height}px")
+                
+                if scroll_height > window_height:
+                    print(f"  WARNING: Content overflows (scroll height {scroll_height}px > window {window_height}px)")
+                    # Allow small overflow for rounding
+                    assert scroll_height <= window_height + 5, f"Content does not fit in viewport for {state_name}"
+                else:
+                    print(f"  ✓ Content fits without scrolling")
             
             # Take screenshot
             screenshot_path = screenshots_dir / f'{state_name}.png'

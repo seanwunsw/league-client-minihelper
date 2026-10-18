@@ -17,7 +17,7 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 15px;
     max-width: 750px;
     width: 100%;
     margin: 0 auto;
@@ -30,14 +30,14 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 12px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
     border-bottom: 2px solid #1e2328;
 }
 
-h1 { font-size: 22px; color: #f0e6d2; }
-h2 { font-size: 16px; margin-bottom: 12px; color: #f0e6d2; }
-h3 { font-size: 14px; margin-bottom: 8px; color: #c8aa6e; }
+h1 { font-size: 20px; color: #f0e6d2; }
+h2 { font-size: 15px; margin-bottom: 10px; color: #f0e6d2; }
+h3 { font-size: 13px; margin-bottom: 6px; color: #c8aa6e; }
 
 .connection-status {
     display: flex;
@@ -69,39 +69,38 @@ h3 { font-size: 14px; margin-bottom: 8px; color: #c8aa6e; }
 .gameflow {
     flex-shrink: 0;
     background: #1e2328;
-    padding: 12px;
+    padding: 10px;
     border-radius: 6px;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     text-align: center;
 }
 
 .phase-display {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: bold;
     color: #f0e6d2;
 }
 
 .features-container {
     flex-shrink: 0;
-    max-height: 400px;
-    overflow-y: auto;
-    margin-bottom: 15px;
+    overflow: visible;
+    margin-bottom: 10px;
 }
 
 .feature-section {
     background: #1e2328;
-    padding: 15px;
+    padding: 12px;
     border-radius: 6px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .warning-banner {
     background: #3c1f1f;
     color: #e84057;
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-radius: 4px;
-    margin-bottom: 12px;
-    font-size: 12px;
+    margin-bottom: 10px;
+    font-size: 11px;
     border-left: 3px solid #e84057;
 }
 
@@ -118,8 +117,8 @@ h3 { font-size: 14px; margin-bottom: 8px; color: #c8aa6e; }
 .toggle-container {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 15px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
 .toggle {
@@ -161,14 +160,14 @@ h3 { font-size: 14px; margin-bottom: 8px; color: #c8aa6e; }
 }
 
 .setting-group {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .setting-group label {
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
     color: #a09b8c;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .range-inputs {
@@ -178,22 +177,22 @@ h3 { font-size: 14px; margin-bottom: 8px; color: #c8aa6e; }
 }
 
 input[type="number"] {
-    width: 70px;
-    padding: 6px;
+    width: 65px;
+    padding: 5px;
     background: #0a0e1a;
     border: 1px solid #3c3c41;
     border-radius: 4px;
     color: #f0e6d2;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 select {
-    padding: 6px;
+    padding: 5px;
     background: #0a0e1a;
     border: 1px solid #3c3c41;
     border-radius: 4px;
     color: #f0e6d2;
-    font-size: 13px;
+    font-size: 11px;
     cursor: pointer;
 }
 
@@ -204,8 +203,8 @@ select#pick-mode {
 
 .role-tabs {
     display: flex;
-    gap: 6px;
-    margin-bottom: 15px;
+    gap: 5px;
+    margin-bottom: 10px;
     flex-wrap: wrap;
 }
 
@@ -213,10 +212,10 @@ select#pick-mode {
     background: #0a0e1a;
     color: #a09b8c;
     border: 1px solid #3c3c41;
-    padding: 6px 12px;
+    padding: 5px 10px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11px;
     transition: 0.2s;
 }
 
@@ -233,25 +232,25 @@ select#pick-mode {
 
 .role-content {
     background: #0a0e1a;
-    padding: 12px;
+    padding: 10px;
     border-radius: 4px;
 }
 
 .champ-lists {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 15px;
+    gap: 12px;
 }
 
 .champ-list h3 {
-    margin-bottom: 8px;
-    font-size: 13px;
+    margin-bottom: 6px;
+    font-size: 12px;
 }
 
 .champ-select {
     width: 100%;
-    margin-bottom: 6px;
-    font-size: 12px;
+    margin-bottom: 5px;
+    font-size: 11px;
 }
 
 .log-section h3 {
