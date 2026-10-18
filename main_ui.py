@@ -24,6 +24,15 @@ else:
 # Change to app directory so relative paths work
 os.chdir(APP_DIR)
 
+def get_resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller."""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 # Global state
 controller = None
 tray_icon = None
@@ -307,9 +316,17 @@ def ipc_server_thread(ipc_socket):
 # Tray icon
 def create_tray_icon():
     """Create the system tray icon."""
-    image = Image.new('RGB', (64, 64), color='#0ac8b9')
-    draw = ImageDraw.Draw(image)
-    draw.rectangle([16, 16, 48, 48], fill='#0a0e1a')
+    # Load icon from assets
+    icon_path = get_resource_path('assets/icon.ico')
+    try:
+        image = Image.open(icon_path)
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Failed to load icon from {icon_path}: {e}, using fallback")
+        # Fallback to simple generated icon
+        image = Image.new('RGB', (64, 64), color='#0ac8b9')
+        draw = ImageDraw.Draw(image)
+        draw.rectangle([16, 16, 48, 48], fill='#0a0e1a')
     
     def on_open():
         """Open the UI window."""
@@ -459,6 +476,47 @@ def webview_thread_main(config, logger):
             
             def on_shown():
                 logger.info("Main window shown (visible)")
+                # Set window icon on Windows
+                if sys.platform == 'win32':
+                    try:
+                        icon_path = get_resource_path('assets/icon.ico')
+                        # Give window a moment to fully initialize
+                        time.sleep(0.1)
+                        
+                        # Load necessary Win32 functions
+                        user32 = ctypes.windll.user32
+                        
+                        # Constants
+                        WM_SETICON = 0x0080
+                        ICON_SMALL = 0
+                        ICON_BIG = 1
+                        LR_LOADFROMFILE = 0x00000010
+                        IMAGE_ICON = 1
+                        
+                        # Find window by title
+                        hwnd = user32.FindWindowW(None, 'LoL Auto-Accept Helper')
+                        if hwnd:
+                            # Load icon from file
+                            hicon = user32.LoadImageW(
+                                None,  # hInst (NULL for loading from file)
+                                icon_path,  # lpszName
+                                IMAGE_ICON,  # uType
+                                0,  # cxDesired (0 = default)
+                                0,  # cyDesired (0 = default)
+                                LR_LOADFROMFILE  # fuLoad
+                            )
+                            
+                            if hicon:
+                                # Set both small and large icons
+                                user32.SendMessageW(hwnd, WM_SETICON, ICON_SMALL, hicon)
+                                user32.SendMessageW(hwnd, WM_SETICON, ICON_BIG, hicon)
+                                logger.info("Window icon set successfully")
+                            else:
+                                logger.warning("Failed to load icon file")
+                        else:
+                            logger.warning("Could not find window to set icon")
+                    except Exception as e:
+                        logger.warning(f"Failed to set window icon: {e}")
             
             def on_loaded():
                 global window, ui_log_handler
