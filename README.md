@@ -1,27 +1,39 @@
 # League of Legends Auto-Accept Helper
 
-A lightweight Windows desktop helper that automatically accepts League of Legends matchmaking ready checks using the League Client Update (LCU) API.
+A lightweight Windows desktop helper that automatically accepts League of Legends matchmaking ready checks and provides champion select automation using the League Client Update (LCU) API.
 
 ## Features
 
-### 🎨 Desktop UI (v0.2.0+)
+### 🎨 Desktop UI (v0.3.0+)
 
 ![UI Screenshot](screenshots/connected.png)
 
 - **Dark, League-inspired UI** built with pywebview (WebView2 backend)
-- **Real-time status display**: connection state, gameflow phase, recent accepts
-- **Live settings**: toggle auto-accept and adjust delays without restart
-- **Accept history**: see your last 10 auto-accepts with timestamps
+- **Real-time status display**: connection state, gameflow phase
+- **Live settings**: toggle features and adjust settings without restart
+- **Champion select automation**: per-role ban/pick preferences
 - **Live log view**: monitor what's happening in real-time
 - **Minimal memory footprint**: window closes to tray, releasing WebView2 processes
 
 ### ⚡ Core Features
 
+#### Auto-Accept (v0.2.0+)
 - **Auto-accepts ready checks** instantly using the official League Client local API
 - **Real-time WebSocket connection** for instant response (with HTTP polling fallback)
+- **Configurable random delay** - add 1-4s random delay to avoid appearing robotic
+
+#### Champion Select (v0.3.0+)
+- **Auto-ban champions** - configure up to 3 ban champions per role with priority fallback
+- **Auto-pick/hover champions** - configure up to 3 pick champions per role with priority fallback
+- **Per-role preferences** - different settings for Top, Jungle, Mid, Bot, Support, and Default (blind pick)
+- **Smart filtering** - skips banned/picked champions and teammate intents
+- **PLANNING phase hover** - automatically hovers your top pick during planning phase
+- **Hover or Lock mode** - choose whether to just hover or instantly lock your pick
+- **⚠️ Warning**: Auto-ban/pick features may violate Riot's Terms of Service. Use at your own risk.
+
+#### General
 - **Automatic client detection** via lockfile or running process
 - **Handles client restarts** - automatically reconnects when the client restarts
-- **Configurable random delay** - add 1-4s random delay to avoid appearing robotic
 - **System tray integration** - runs quietly in the background with status indicators
 - **Easy to use** - just double-click and go!
 
@@ -54,8 +66,28 @@ The UI shows:
 - **Gameflow phase** (Lobby / In Queue / Ready Check / Champ Select / In Game)
 - **Auto-accept toggle** - turn on/off instantly
 - **Delay controls** - adjust min/max random delay (0-10 seconds)
-- **Recent accepts** - last 10 accepts with timestamps and delays
+- **Champion select settings**:
+  - Auto-ban and auto-pick toggles
+  - Hover/Lock mode selector
+  - Per-role champion preferences (Top, Jungle, Mid, Bot, Support, Default)
+  - Up to 3 ban and 3 pick champions per role in priority order
 - **Live log** - see what's happening in real-time
+
+#### Champion Select Setup
+
+1. **Enable auto-ban/auto-pick** using the toggles
+2. **Select pick mode**: "Hover" (safer) or "Lock" (auto-locks)
+3. **Choose your role** using the role tabs
+4. **Set champions** for each priority slot (1st, 2nd, 3rd)
+   - Bans: Champions you want to ban (priority order for fallback)
+   - Picks: Champions you want to pick/hover (priority order for fallback)
+5. **Repeat for each role** you play
+
+The app will automatically:
+- Use the correct preferences based on your assigned position
+- Fall back to next priority if a champion is banned/picked
+- Skip teammate hover/intent champions when banning
+- Use "Default" preferences for blind pick (no assigned position)
 
 ### System Tray
 
@@ -126,8 +158,12 @@ The helper uses the League Client's built-in local API:
 1. **Finds the client** by reading the `lockfile` or detecting the running `LeagueClientUx.exe` process
 2. **Authenticates** using the client's local credentials (Basic auth with `riot:<password>`)
 3. **Connects via WebSocket** to receive real-time events
-4. **Listens for ready check events** (`OnJsonApiEvent_lol-matchmaking_v1_ready-check`)
-5. **Accepts automatically** when a ready check is detected and you haven't responded yet
+4. **Listens for events**:
+   - Ready checks: `OnJsonApiEvent_lol-matchmaking_v1_ready-check`
+   - Champion select: `OnJsonApiEvent_lol-champ-select_v1_session`
+5. **Takes actions** automatically based on your configuration:
+   - Accepts ready checks when detected
+   - Bans/picks champions during champion select based on your role
 
 All communication happens locally on your computer (`127.0.0.1`) - nothing is sent over the internet.
 
@@ -175,12 +211,19 @@ pyinstaller build.spec
 │   ├── api_client.py       # HTTP API wrapper
 │   └── websocket_client.py # WebSocket event streaming
 ├── core/
+│   ├── app_controller.py   # Main application controller
 │   └── event_bus.py        # Event dispatching system
 ├── features/               # Modular features
 │   ├── base_feature.py     # Base feature class
-│   └── auto_accept.py      # Auto-accept implementation
+│   ├── auto_accept.py      # Auto-accept implementation
+│   ├── champ_select.py     # Champion select automation (v0.3.0+)
+│   └── champ_select_logic.py # Testable champion select logic (v0.3.0+)
+├── ui/                     # WebView-based UI
+│   ├── index.html          # UI structure
+│   ├── style.css           # UI styling
+│   └── app.js              # UI logic
 ├── tests/                  # Unit tests
-├── main.py                 # Application entry point
+├── main_ui.py              # Application entry point (UI mode)
 ├── config.yaml             # Configuration file
 └── build.spec              # PyInstaller build configuration
 ```
@@ -205,18 +248,28 @@ The helper found the client but can't connect. Try:
 
 ### Ready checks aren't being accepted
 
-- Check that auto-accept is enabled (right-click system tray icon)
-- Check the console output for errors
+- Check that auto-accept is enabled (right-click system tray icon or check UI)
+- Check the log output for errors
 - Try setting `log_level: DEBUG` in `config.yaml` for more detailed logs
+
+### Champion select isn't working
+
+- Check that auto-ban/auto-pick is enabled in the UI
+- Make sure you've configured champions for your role
+- Check the log for "Champion select" messages
+- Champion IDs are loaded from the client on connect - make sure you're connected
+- Some game modes (ARAM, special modes) may not support all features
 
 ## Disclaimer
 
 ⚠️ **Important**: This tool uses the League Client's local API, which is not officially documented or supported by Riot Games. Use at your own risk.
 
 - This tool does **not** modify game files or memory
-- This tool does **not** provide any competitive advantage
-- This tool only automates clicking the "Accept" button during matchmaking
+- This tool does **not** provide any competitive advantage in-game
+- Auto-accept only automates clicking the "Accept" button during matchmaking
+- **Auto-ban and auto-pick features may be considered automation of gameplay actions**, which could potentially violate Riot's Terms of Service
 - Riot Games may change their API at any time, which could break this tool
+- **The champion select features are experimental** - use at your own discretion
 
 The developers are not responsible for any consequences of using this tool, including but not limited to account restrictions or bans.
 

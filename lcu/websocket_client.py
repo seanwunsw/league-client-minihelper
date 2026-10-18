@@ -92,6 +92,9 @@ class LCUWebSocketClient:
                 
                 # Subscribe to ready check events
                 self._subscribe_to_event('OnJsonApiEvent_lol-matchmaking_v1_ready-check')
+                
+                # Subscribe to champion select events
+                self._subscribe_to_event('OnJsonApiEvent_lol-champ-select_v1_session')
             
             self.ws = websocket.WebSocketApp(
                 url,

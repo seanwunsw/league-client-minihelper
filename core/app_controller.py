@@ -140,6 +140,11 @@ class AppController:
                         self.config['accept_delay_min_seconds'] = feature.accept_delay_min
                     if hasattr(feature, 'accept_delay_max'):
                         self.config['accept_delay_max_seconds'] = feature.accept_delay_max
+                elif name == 'Champion Select':
+                    self.config['auto_ban_enabled'] = feature.auto_ban_enabled
+                    self.config['auto_pick_enabled'] = feature.auto_pick_enabled
+                    self.config['pick_mode'] = feature.pick_mode
+                    self.config['champ_select_preferences'] = feature.role_preferences
             
             # Write to file
             with open('config.yaml', 'w') as f:

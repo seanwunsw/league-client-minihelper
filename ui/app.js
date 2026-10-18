@@ -7,10 +7,12 @@ let state = {
 
 let logs = [];
 const MAX_LOGS = 100;
+let currentRole = 'default';
+let champions = [];
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    // Setup event listeners
+    // Setup event listeners for auto-accept
     document.getElementById('auto-accept-toggle').addEventListener('change', (e) => {
         window.pywebview.api.toggle_feature('Auto-Accept');
     });
@@ -23,6 +25,35 @@ document.addEventListener('DOMContentLoaded', () => {
         window.pywebview.api.update_setting('Auto-Accept', 'accept_delay_max_seconds', e.target.value);
     });
     
+    // Setup event listeners for champion select
+    document.getElementById('auto-ban-toggle').addEventListener('change', (e) => {
+        window.pywebview.api.update_setting('Champion Select', 'auto_ban_enabled', e.target.checked);
+    });
+    
+    document.getElementById('auto-pick-toggle').addEventListener('change', (e) => {
+        window.pywebview.api.update_setting('Champion Select', 'auto_pick_enabled', e.target.checked);
+    });
+    
+    document.getElementById('pick-mode').addEventListener('change', (e) => {
+        window.pywebview.api.update_setting('Champion Select', 'pick_mode', e.target.value);
+    });
+    
+    // Role tabs
+    document.querySelectorAll('.role-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            const role = e.target.dataset.role;
+            switchRole(role);
+        });
+    });
+    
+    // Champion select dropdowns
+    document.querySelectorAll('.champ-select').forEach(select => {
+        select.addEventListener('change', (e) => {
+            saveRolePreferences();
+        });
+    });
+    
+    // Clear log button
     document.getElementById('clear-log').addEventListener('click', () => {
         logs = [];
         renderLogs();
@@ -75,30 +106,128 @@ function render() {
             document.getElementById('delay-min').value = autoAccept.settings.accept_delay_min_seconds || 1;
             document.getElementById('delay-max').value = autoAccept.settings.accept_delay_max_seconds || 4;
         }
+    }
+    
+    // Champion Select
+    const champSelect = state.features.find(f => f.name === 'Champion Select');
+    if (champSelect) {
+        document.getElementById('auto-ban-toggle').checked = champSelect.settings.auto_ban_enabled || false;
+        document.getElementById('auto-pick-toggle').checked = champSelect.settings.auto_pick_enabled || false;
+        document.getElementById('pick-mode').value = champSelect.settings.pick_mode || 'hover';
         
-        // History
-        if (autoAccept.status && autoAccept.status.accept_history) {
-            renderHistory(autoAccept.status.accept_history);
+        // Load champion list if not loaded
+        if (champions.length === 0) {
+            loadChampions();
         }
+        
+        // Render role preferences
+        renderRolePreferences(champSelect.settings.role_preferences);
     }
 }
 
-// Render accept history
-function renderHistory(history) {
-    const historyEl = document.getElementById('accept-history');
+// Load champion list
+function loadChampions() {
+    if (!window.pywebview || !window.pywebview.api) return;
     
-    if (!history || history.length === 0) {
-        historyEl.innerHTML = 'No recent accepts';
-        return;
+    // Call custom method to get champion list from feature
+    const champSelectFeature = state.features.find(f => f.name === 'Champion Select');
+    if (champSelectFeature && champSelectFeature.status && champSelectFeature.status.champions) {
+        champions = champSelectFeature.status.champions;
+        updateChampionDropdowns();
     }
+}
+
+// Update all champion dropdowns
+function updateChampionDropdowns() {
+    document.querySelectorAll('.champ-select').forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">None</option>';
+        
+        champions.forEach(champ => {
+            const option = document.createElement('option');
+            option.value = champ.id;
+            option.textContent = champ.name;
+            select.appendChild(option);
+        });
+        
+        // Restore previous selection if valid
+        if (currentValue) {
+            select.value = currentValue;
+        }
+    });
+}
+
+// Switch role
+function switchRole(role) {
+    currentRole = role;
     
-    // Show only last 5 accepts
-    const recentHistory = history.slice(-5);
+    // Update tab styles
+    document.querySelectorAll('.role-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.role === role);
+    });
     
-    historyEl.innerHTML = recentHistory.map(item => {
-        const time = new Date(item.timestamp).toLocaleTimeString();
-        return `<div class="history-item">${time} - Delay: ${item.delay.toFixed(2)}s</div>`;
-    }).reverse().join('');
+    // Reload dropdowns for this role
+    const champSelectFeature = state.features.find(f => f.name === 'Champion Select');
+    if (champSelectFeature && champSelectFeature.settings.role_preferences) {
+        renderRolePreferences(champSelectFeature.settings.role_preferences);
+    }
+}
+
+// Render role preferences
+function renderRolePreferences(rolePrefs) {
+    if (!rolePrefs || !rolePrefs[currentRole]) return;
+    
+    const prefs = rolePrefs[currentRole];
+    
+    // Update ban dropdowns
+    const banSelects = document.querySelectorAll('.champ-select[data-type="ban"]');
+    banSelects.forEach((select, index) => {
+        const priority = index + 1;
+        if (prefs.bans && prefs.bans[index]) {
+            select.value = prefs.bans[index];
+        } else {
+            select.value = '';
+        }
+    });
+    
+    // Update pick dropdowns
+    const pickSelects = document.querySelectorAll('.champ-select[data-type="pick"]');
+    pickSelects.forEach((select, index) => {
+        const priority = index + 1;
+        if (prefs.picks && prefs.picks[index]) {
+            select.value = prefs.picks[index];
+        } else {
+            select.value = '';
+        }
+    });
+}
+
+// Save role preferences
+function saveRolePreferences() {
+    if (!window.pywebview || !window.pywebview.api) return;
+    
+    const champSelectFeature = state.features.find(f => f.name === 'Champion Select');
+    if (!champSelectFeature || !champSelectFeature.settings.role_preferences) return;
+    
+    const rolePrefs = JSON.parse(JSON.stringify(champSelectFeature.settings.role_preferences));
+    
+    // Get current role prefs
+    const bans = [];
+    document.querySelectorAll('.champ-select[data-type="ban"]').forEach(select => {
+        const value = parseInt(select.value);
+        if (value) bans.push(value);
+    });
+    
+    const picks = [];
+    document.querySelectorAll('.champ-select[data-type="pick"]').forEach(select => {
+        const value = parseInt(select.value);
+        if (value) picks.push(value);
+    });
+    
+    rolePrefs[currentRole] = { bans, picks };
+    
+    // Save to backend
+    window.pywebview.api.update_setting('Champion Select', 'role_preferences', rolePrefs);
 }
 
 // Add log entry

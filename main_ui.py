@@ -511,7 +511,7 @@ def main():
         # Setup logging
         logger = setup_logging(config)
         
-        logger.info("=== LoL Auto-Accept Helper v0.2.0 (UI Mode) ===")
+        logger.info("=== LoL Auto-Accept Helper v0.3.0 (UI Mode) ===")
         logger.info(f"App directory: {APP_DIR}")
         
         # Check for single instance
@@ -557,6 +557,12 @@ def main():
         auto_accept = AutoAcceptFeature(config)
         auto_accept.enabled = config.get('auto_accept_enabled', True)
         controller.register_feature(auto_accept)
+        
+        # Register champion select feature
+        from features.champ_select import ChampSelectFeature
+        champ_select = ChampSelectFeature(config)
+        controller.register_feature(champ_select)
+        
         logger.info("Features registered")
         
         # Start controller (non-blocking - runs connection loop in background thread)
