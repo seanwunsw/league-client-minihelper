@@ -12,6 +12,8 @@ a = Analysis(
         ('ui/index.html', 'ui'),
         ('ui/style.css', 'ui'),
         ('ui/app.js', 'ui'),
+        ('assets/icon.ico', 'assets'),
+        ('assets/icon_square.png', 'assets'),
     ],
     hiddenimports=[
         'websocket',
@@ -55,4 +57,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon='assets/icon.ico',  # Application icon
 )
