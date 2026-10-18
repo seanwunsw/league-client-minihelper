@@ -18,61 +18,187 @@ STATES = {
         'connection_state': 'disconnected',
         'gameflow_phase': 'None',
         'client_info': None,
-        'features': [{
-            'name': 'Auto-Accept',
-            'enabled': True,
-            'settings': {
-                'accept_delay_min_seconds': 1,
-                'accept_delay_max_seconds': 4
-            },
-            'status': {
+        'features': [
+            {
+                'name': 'Auto-Accept',
                 'enabled': True,
-                'accept_history': []
+                'settings': {
+                    'accept_delay_min_seconds': 1,
+                    'accept_delay_max_seconds': 4
+                },
+                'status': {
+                    'enabled': True,
+                    'accept_history': []
+                }
+            },
+            {
+                'name': 'Champion Select',
+                'enabled': True,
+                'settings': {
+                    'auto_ban_enabled': False,
+                    'auto_pick_enabled': False,
+                    'pick_mode': 'hover',
+                    'role_preferences': {
+                        'default': {'bans': [], 'picks': []},
+                        'top': {'bans': [], 'picks': []},
+                        'jungle': {'bans': [], 'picks': []},
+                        'middle': {'bans': [], 'picks': []},
+                        'bottom': {'bans': [], 'picks': []},
+                        'utility': {'bans': [], 'picks': []}
+                    }
+                },
+                'status': {
+                    'enabled': True,
+                    'auto_ban_enabled': False,
+                    'auto_pick_enabled': False,
+                    'champions': [
+                        {'id': 1, 'name': 'Annie'},
+                        {'id': 2, 'name': 'Olaf'},
+                        {'id': 3, 'name': 'Galio'},
+                        {'id': 266, 'name': 'Aatrox'},
+                        {'id': 103, 'name': 'Ahri'}
+                    ]
+                }
             }
-        }]
+        ]
     },
     'connected': {
         'connection_state': 'connected',
         'gameflow_phase': 'Lobby',
         'client_info': {'port': 12345, 'install_dir': 'C:\\Riot Games\\League of Legends'},
-        'features': [{
-            'name': 'Auto-Accept',
-            'enabled': True,
-            'settings': {
-                'accept_delay_min_seconds': 1,
-                'accept_delay_max_seconds': 4
-            },
-            'status': {
+        'features': [
+            {
+                'name': 'Auto-Accept',
                 'enabled': True,
-                'accept_history': [
-                    {'timestamp': '2026-10-10T14:23:45', 'delay': 2.34},
-                    {'timestamp': '2026-10-10T14:20:12', 'delay': 3.67},
-                    {'timestamp': '2026-10-10T14:18:03', 'delay': 1.89}
-                ]
+                'settings': {
+                    'accept_delay_min_seconds': 1,
+                    'accept_delay_max_seconds': 4
+                },
+                'status': {
+                    'enabled': True,
+                    'accept_history': [
+                        {'timestamp': '2026-10-10T14:23:45', 'delay': 2.34},
+                        {'timestamp': '2026-10-10T14:20:12', 'delay': 3.67},
+                        {'timestamp': '2026-10-10T14:18:03', 'delay': 1.89}
+                    ]
+                }
+            },
+            {
+                'name': 'Champion Select',
+                'enabled': True,
+                'settings': {
+                    'auto_ban_enabled': True,
+                    'auto_pick_enabled': True,
+                    'pick_mode': 'hover',
+                    'role_preferences': {
+                        'default': {'bans': [266, 64, 7], 'picks': [103, 84, 245]},
+                        'top': {'bans': [266, 86, 24], 'picks': [86, 58, 24]},
+                        'jungle': {'bans': [64, 104, 141], 'picks': [64, 104, 60]},
+                        'middle': {'bans': [103, 238, 157], 'picks': [103, 238, 157]},
+                        'bottom': {'bans': [523, 81, 22], 'picks': [523, 22, 81]},
+                        'utility': {'bans': [555, 526, 412], 'picks': [555, 526, 497]}
+                    }
+                },
+                'status': {
+                    'enabled': True,
+                    'auto_ban_enabled': True,
+                    'auto_pick_enabled': True,
+                    'champions': [
+                        {'id': 1, 'name': 'Annie'},
+                        {'id': 2, 'name': 'Olaf'},
+                        {'id': 3, 'name': 'Galio'},
+                        {'id': 7, 'name': 'LeBlanc'},
+                        {'id': 22, 'name': 'Ashe'},
+                        {'id': 24, 'name': 'Jax'},
+                        {'id': 58, 'name': 'Renekton'},
+                        {'id': 60, 'name': 'Elise'},
+                        {'id': 64, 'name': 'Lee Sin'},
+                        {'id': 81, 'name': 'Ezreal'},
+                        {'id': 84, 'name': 'Akali'},
+                        {'id': 86, 'name': 'Garen'},
+                        {'id': 103, 'name': 'Ahri'},
+                        {'id': 104, 'name': 'Graves'},
+                        {'id': 141, 'name': 'Kayn'},
+                        {'id': 157, 'name': 'Yasuo'},
+                        {'id': 238, 'name': 'Zed'},
+                        {'id': 245, 'name': 'Ekko'},
+                        {'id': 266, 'name': 'Aatrox'},
+                        {'id': 412, 'name': 'Thresh'},
+                        {'id': 497, 'name': 'Rakan'},
+                        {'id': 523, 'name': 'Aphelios'},
+                        {'id': 526, 'name': 'Rell'},
+                        {'id': 555, 'name': 'Pyke'}
+                    ]
+                }
             }
-        }]
+        ]
     },
-    'ready_check': {
+    'champ_select': {
         'connection_state': 'connected',
-        'gameflow_phase': 'ReadyCheck',
+        'gameflow_phase': 'ChampSelect',
         'client_info': {'port': 12345, 'install_dir': 'C:\\Riot Games\\League of Legends'},
-        'features': [{
-            'name': 'Auto-Accept',
-            'enabled': True,
-            'settings': {
-                'accept_delay_min_seconds': 1,
-                'accept_delay_max_seconds': 4
-            },
-            'status': {
+        'features': [
+            {
+                'name': 'Auto-Accept',
                 'enabled': True,
-                'accept_history': [
-                    {'timestamp': '2026-10-10T14:23:45', 'delay': 2.34},
-                    {'timestamp': '2026-10-10T14:20:12', 'delay': 3.67},
-                    {'timestamp': '2026-10-10T14:18:03', 'delay': 1.89},
-                    {'timestamp': '2026-10-10T14:15:22', 'delay': 2.91}
-                ]
+                'settings': {
+                    'accept_delay_min_seconds': 1,
+                    'accept_delay_max_seconds': 4
+                },
+                'status': {
+                    'enabled': True,
+                    'accept_history': []
+                }
+            },
+            {
+                'name': 'Champion Select',
+                'enabled': True,
+                'settings': {
+                    'auto_ban_enabled': True,
+                    'auto_pick_enabled': True,
+                    'pick_mode': 'hover',
+                    'role_preferences': {
+                        'default': {'bans': [266, 64, 7], 'picks': [103, 84, 245]},
+                        'top': {'bans': [266, 86, 24], 'picks': [86, 58, 24]},
+                        'jungle': {'bans': [64, 104, 141], 'picks': [64, 104, 60]},
+                        'middle': {'bans': [103, 238, 157], 'picks': [103, 238, 157]},
+                        'bottom': {'bans': [523, 81, 22], 'picks': [523, 22, 81]},
+                        'utility': {'bans': [555, 526, 412], 'picks': [555, 526, 497]}
+                    }
+                },
+                'status': {
+                    'enabled': True,
+                    'auto_ban_enabled': True,
+                    'auto_pick_enabled': True,
+                    'champions': [
+                        {'id': 1, 'name': 'Annie'},
+                        {'id': 2, 'name': 'Olaf'},
+                        {'id': 3, 'name': 'Galio'},
+                        {'id': 7, 'name': 'LeBlanc'},
+                        {'id': 22, 'name': 'Ashe'},
+                        {'id': 24, 'name': 'Jax'},
+                        {'id': 58, 'name': 'Renekton'},
+                        {'id': 60, 'name': 'Elise'},
+                        {'id': 64, 'name': 'Lee Sin'},
+                        {'id': 81, 'name': 'Ezreal'},
+                        {'id': 84, 'name': 'Akali'},
+                        {'id': 86, 'name': 'Garen'},
+                        {'id': 103, 'name': 'Ahri'},
+                        {'id': 104, 'name': 'Graves'},
+                        {'id': 141, 'name': 'Kayn'},
+                        {'id': 157, 'name': 'Yasuo'},
+                        {'id': 238, 'name': 'Zed'},
+                        {'id': 245, 'name': 'Ekko'},
+                        {'id': 266, 'name': 'Aatrox'},
+                        {'id': 412, 'name': 'Thresh'},
+                        {'id': 497, 'name': 'Rakan'},
+                        {'id': 523, 'name': 'Aphelios'},
+                        {'id': 526, 'name': 'Rell'},
+                        {'id': 555, 'name': 'Pyke'}
+                    ]
+                }
             }
-        }]
+        ]
     }
 }
 
