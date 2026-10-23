@@ -17,6 +17,7 @@ def feature_with_delays():
         'auto_ban_enabled': True,
         'auto_pick_enabled': True,
         'pick_mode': 'hover',
+        '_test_mode': True,  # Enable test mode for deterministic execution
         'ban_delay_min_seconds': 0.5,
         'ban_delay_max_seconds': 1.0,
         'pick_delay_min_seconds': 0.5,
@@ -48,6 +49,10 @@ def test_delay_within_range(feature_with_delays, caplog):
         'timer': {'adjustedTimeLeftInPhase': 30000}  # 30 seconds
     }
     
+    # Disable test mode for this test to check actual delay calculation
+    feature_with_delays._test_mode = False
+    feature_with_delays._test_delay_override = None
+    
     # Test ban delay
     for _ in range(10):
         delay = feature_with_delays._calculate_safe_delay(
@@ -60,6 +65,10 @@ def test_delay_within_range(feature_with_delays, caplog):
 
 def test_delay_capped_by_timer(feature_with_delays, caplog):
     """Test that delay is capped when timer is running out."""
+    # Disable test mode for this test to check actual delay calculation
+    feature_with_delays._test_mode = False
+    feature_with_delays._test_delay_override = None
+    
     # Only 2 seconds left (with 3s safety margin, max delay should be 0)
     session = {
         'timer': {'adjustedTimeLeftInPhase': 2000}  # 2 seconds
@@ -110,19 +119,15 @@ def test_skip_when_user_acted_during_delay(feature_with_delays, caplog):
     session_after = copy.deepcopy(session_initial)
     session_after['actions'][0][0]['completed'] = True  # User already acted
     
-    # Mock API responses
+    # Mock API responses (in test mode, no actual delay)
     feature_with_delays.api_client.get.side_effect = [
         [1, 2, 3],  # bannable IDs (initial)
         session_after,  # session after delay
     ]
     
-    # Start the ban action
+    # Start the ban action (in test mode, executes synchronously)
     action = session_initial['actions'][0][0]
     feature_with_delays._handle_ban_action(session_initial, action, 0)
-    
-    # Wait for thread to complete
-    if feature_with_delays.pending_action_thread:
-        feature_with_delays.pending_action_thread.join(timeout=3)
     
     # Should have logged that user already acted or action no longer ours
     assert any('already acted' in record.message.lower() or 'no longer ours' in record.message.lower() 
@@ -153,7 +158,7 @@ def test_reselection_after_delay(feature_with_delays, caplog):
     session_after = session_initial.copy()
     session_after['bans'] = {'myTeamBans': [1], 'theirTeamBans': []}
     
-    # Mock API responses
+    # Mock API responses (in test mode, no actual delay)
     feature_with_delays.api_client.get.side_effect = [
         [1, 2, 3],  # bannable IDs (initial)
         session_after,  # session after delay (champ 1 banned)
@@ -161,13 +166,9 @@ def test_reselection_after_delay(feature_with_delays, caplog):
     ]
     feature_with_delays.api_client.patch.return_value = {}
     
-    # Start the ban action
+    # Start the ban action (in test mode, executes synchronously)
     action = session_initial['actions'][0][0]
     feature_with_delays._handle_ban_action(session_initial, action, 0)
-    
-    # Wait for thread to complete
-    if feature_with_delays.pending_action_thread:
-        feature_with_delays.pending_action_thread.join(timeout=2)
     
     # Should have tried to ban champ 2 (first available after champ 1 was banned)
     patch_calls = [call for call in feature_with_delays.api_client.patch.call_args_list]
@@ -178,6 +179,10 @@ def test_reselection_after_delay(feature_with_delays, caplog):
 
 def test_cancel_on_champ_select_end(feature_with_delays, caplog):
     """Test that pending actions are cancelled when champ select ends."""
+    # For this test, we need to use threaded mode to test cancellation
+    feature_with_delays._test_mode = False
+    feature_with_delays._test_delay_override = 0.5  # Short delay
+    
     session = {
         'localPlayerCellId': 0,
         'myTeam': [{'cellId': 0, 'assignedPosition': ''}],
@@ -195,7 +200,7 @@ def test_cancel_on_champ_select_end(feature_with_delays, caplog):
     # Mock API responses
     feature_with_delays.api_client.get.return_value = [1, 2, 3]  # bannable IDs
     
-    # Start the ban action (will wait for delay)
+    # Start the ban action (will wait for delay in background)
     action = session['actions'][0][0]
     feature_with_delays._handle_ban_action(session, action, 0)
     
