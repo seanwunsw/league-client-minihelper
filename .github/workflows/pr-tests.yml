@@ -4,6 +4,12 @@ on:
   pull_request:
     branches:
       - main
+      - 'cursor/**'
+  # Stacked PRs target a cursor/* branch. pull_request filters are taken
+  # from the default branch, so also run on push of those branches.
+  push:
+    branches:
+      - 'cursor/**'
 
 permissions:
   contents: read
@@ -278,6 +284,7 @@ jobs:
         retention-days: 14
     
     - name: Comment exe size on PR
+      if: github.event_name == 'pull_request'
       continue-on-error: true
       uses: actions/github-script@v7
       with:

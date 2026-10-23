@@ -65,10 +65,46 @@ Edit config.yaml in the same folder as the exe to customize:
 - Configure per-role champion preferences (easier via UI)
 - Change log level
 - Start minimized to tray
+- close_action: exit (default) or tray
+- start_with_windows: true/false (default false; packaged exe only)
+
+SETTINGS (gear icon)
+--------------------
+- When closing the window: Exit app (default) or Minimise to tray
+- Start with Windows (minimised to tray), off by default
+
+The window X button exits the app unless you choose Minimise to tray.
+The minimise button still minimises. Tray menu Quit still exits.
+
+START WITH WINDOWS
+------------------
+Off by default. Turn it on in Settings, or set start_with_windows: true.
+
+This build does not request administrator rights (build.spec does not set
+uac_admin, and there is no requireAdministrator manifest). Windows starts
+it at logon with the current-user Run key:
+
+  HKCU\Software\Microsoft\Windows\CurrentVersion\Run
+  Name:  LoLAutoAccept
+  Value: "<path-to-this-exe>" --minimized
+
+--minimized starts the app in the tray. Double-clicking the exe yourself
+still opens the window.
+
+If you move the exe, the next launch updates the registered path while the
+setting is on. Turning the setting off removes the Run value.
+
+A Run key cannot elevate silently. A future build that requires
+administrator rights must set REQUIRES_ADMIN_ELEVATION = True in
+core/windows_startup.py so startup is a Task Scheduler logon task with
+highest privileges (schtasks /RL HIGHEST) instead of the Run key.
+
+Running from source cannot register startup; the checkbox is disabled.
 
 SYSTEM TRAY
 -----------
-- Close window (X) → hides to tray, keeps running
+- Close window (X) → exits the app (default). Settings can change this to hide-to-tray
+- Minimise button → minimises the window, app keeps running
 - Right-click tray icon → Open / Toggle / Quit
 - Tray-only mode uses ~30-50 MB RAM
 - With UI open: ~80-120 MB RAM (WebView2)

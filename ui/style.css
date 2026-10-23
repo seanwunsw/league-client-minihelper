@@ -35,6 +35,12 @@ header {
     border-bottom: 2px solid #1e2328;
 }
 
+.title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 h1 { font-size: 20px; color: #f0e6d2; }
 h2 { font-size: 15px; margin-bottom: 10px; color: #f0e6d2; }
 h3 { font-size: 13px; margin-bottom: 6px; color: #c8aa6e; }
@@ -276,6 +282,108 @@ button {
 
 button:hover {
     background: #0de4d0;
+}
+
+button.icon-button {
+    background: transparent;
+    color: #c8aa6e;
+    border: 1px solid #3c3c41;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 4px;
+    font-size: 15px;
+    line-height: 1;
+    font-weight: normal;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+button.icon-button svg {
+    display: block;
+}
+
+button.icon-button:hover {
+    background: transparent;
+    color: #0ac8b9;
+    border-color: #0ac8b9;
+}
+
+.settings-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 56px 16px 16px;
+}
+
+.settings-panel[hidden] {
+    display: none !important;
+}
+
+.settings-card {
+    width: min(420px, 100%);
+    background: #1e2328;
+    border: 1px solid #3c3c41;
+    border-radius: 8px;
+    padding: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.settings-header h2 {
+    margin: 0;
+    font-size: 15px;
+}
+
+.settings-fieldset {
+    border: 1px solid #3c3c41;
+    border-radius: 6px;
+    margin: 0 0 12px;
+    padding: 8px 10px 10px;
+}
+
+.settings-fieldset legend {
+    padding: 0 4px;
+    color: #a09b8c;
+    font-size: 12px;
+}
+
+.settings-option,
+.settings-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    font-size: 13px;
+    color: #f0e6d2;
+    cursor: pointer;
+}
+
+.settings-check {
+    margin: 0;
+}
+
+.settings-check.is-disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.settings-note {
+    margin: 8px 0 0;
+    color: #a09b8c;
+    font-size: 11px;
+    line-height: 1.4;
 }
 
 .log-view {
