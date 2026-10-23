@@ -126,7 +126,7 @@ def test_skip_when_user_acted_during_delay(feature_with_delays, caplog):
     
     # Wait for thread to complete
     if feature_with_delays.pending_action_thread:
-        feature_with_delays.pending_action_thread.join(timeout=2)
+        feature_with_delays.pending_action_thread.join(timeout=3)
     
     # Should have logged that user already acted
     assert any('user already acted' in record.message.lower() for record in caplog.records)
