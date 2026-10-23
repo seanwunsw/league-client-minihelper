@@ -84,15 +84,23 @@ def test_fallback_to_default_when_role_list_empty_ban(feature, caplog):
             }]
         ],
         'bans': {'myTeamBans': [], 'theirTeamBans': []},
-        'timer': {'phase': 'BAN_PICK'}
+        'timer': {'phase': 'BAN_PICK', 'adjustedTimeLeftInPhase': 30000}
     }
     
     # Mock API responses
-    feature.api_client.get.return_value = [1, 2, 3, 10, 11, 12]  # All champions available
+    feature.api_client.get.side_effect = [
+        [1, 2, 3, 10, 11, 12],  # All champions available (initial)
+        session,  # Re-fetch after delay
+        [1, 2, 3, 10, 11, 12],  # All champions available (after delay)
+    ]
     feature.api_client.patch.return_value = {}
     
     # Process the session
     feature._process_session(session)
+    
+    # Wait for thread to complete
+    if feature.pending_action_thread:
+        feature.pending_action_thread.join(timeout=3)
     
     # Check that it logged the fallback
     assert any('falling back to default' in record.message.lower() for record in caplog.records)
@@ -125,15 +133,23 @@ def test_fallback_to_default_when_role_list_empty_pick(feature, caplog):
             }]
         ],
         'bans': {'myTeamBans': [], 'theirTeamBans': []},
-        'timer': {'phase': 'BAN_PICK'}
+        'timer': {'phase': 'BAN_PICK', 'adjustedTimeLeftInPhase': 30000}
     }
     
     # Mock API responses
-    feature.api_client.get.return_value = [1, 2, 3, 10, 11, 12]
+    feature.api_client.get.side_effect = [
+        [1, 2, 3, 10, 11, 12],  # pickable (initial)
+        session,  # Re-fetch after delay
+        [1, 2, 3, 10, 11, 12],  # pickable (after delay)
+    ]
     feature.api_client.patch.return_value = {}
     
     # Process the session
     feature._process_session(session)
+    
+    # Wait for thread to complete
+    if feature.pending_action_thread:
+        feature.pending_action_thread.join(timeout=3)
     
     # Check that it logged the fallback
     assert any('falling back to default' in record.message.lower() for record in caplog.records)
@@ -167,15 +183,23 @@ def test_no_fallback_when_role_has_list(feature, caplog):
             }]
         ],
         'bans': {'myTeamBans': [], 'theirTeamBans': []},
-        'timer': {'phase': 'BAN_PICK'}
+        'timer': {'phase': 'BAN_PICK', 'adjustedTimeLeftInPhase': 30000}
     }
     
     # Mock API responses
-    feature.api_client.get.return_value = [20, 21, 30, 31]
+    feature.api_client.get.side_effect = [
+        [20, 21, 30, 31],  # bannable (initial)
+        session,  # Re-fetch after delay
+        [20, 21, 30, 31],  # bannable (after delay)
+    ]
     feature.api_client.patch.return_value = {}
     
     # Process the session
     feature._process_session(session)
+    
+    # Wait for thread to complete
+    if feature.pending_action_thread:
+        feature.pending_action_thread.join(timeout=3)
     
     # Should NOT fall back to default
     assert not any('falling back to default' in record.message.lower() for record in caplog.records)
@@ -207,15 +231,23 @@ def test_fallback_when_no_assigned_position(feature, caplog):
             }]
         ],
         'bans': {'myTeamBans': [], 'theirTeamBans': []},
-        'timer': {'phase': 'BAN_PICK'}
+        'timer': {'phase': 'BAN_PICK', 'adjustedTimeLeftInPhase': 30000}
     }
     
     # Mock API responses
-    feature.api_client.get.return_value = [1, 2, 3]
+    feature.api_client.get.side_effect = [
+        [1, 2, 3],  # bannable (initial)
+        session,  # Re-fetch after delay
+        [1, 2, 3],  # bannable (after delay)
+    ]
     feature.api_client.patch.return_value = {}
     
     # Process the session
     feature._process_session(session)
+    
+    # Wait for thread to complete
+    if feature.pending_action_thread:
+        feature.pending_action_thread.join(timeout=3)
     
     # Should use default directly (logged as "assigned role = default")
     assert any('assigned role = default' in record.message.lower() for record in caplog.records)
@@ -246,15 +278,23 @@ def test_planning_hover_fallback(feature, caplog):
             }]
         ],
         'bans': {'myTeamBans': [], 'theirTeamBans': []},
-        'timer': {'phase': 'PLANNING'}
+        'timer': {'phase': 'PLANNING', 'adjustedTimeLeftInPhase': 30000}
     }
     
     # Mock API responses
-    feature.api_client.get.return_value = [10, 11, 12, 40]
+    feature.api_client.get.side_effect = [
+        [10, 11, 12, 40],  # pickable (initial)
+        session,  # Re-fetch after delay
+        [10, 11, 12, 40],  # pickable (after delay)
+    ]
     feature.api_client.patch.return_value = {}
     
     # Process the session
     feature._process_session(session)
+    
+    # Wait for thread to complete
+    if feature.pending_action_thread:
+        feature.pending_action_thread.join(timeout=3)
     
     # Should fall back to default for picks
     assert any('falling back to default' in record.message.lower() for record in caplog.records)
