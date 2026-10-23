@@ -15,13 +15,7 @@ def feature():
         'auto_ban_enabled': True,
         'auto_pick_enabled': True,
         'pick_mode': 'hover',
-        # Keep the delay tiny and fixed. The default 1–3s range can outlast
-        # join(timeout=3) when the roll is 3s, so the assertion flakes.
-        # PLANNING hover skips the action when the delay is zero, so stay above 0.
-        'ban_delay_min_seconds': 0.05,
-        'ban_delay_max_seconds': 0.05,
-        'pick_delay_min_seconds': 0.05,
-        'pick_delay_max_seconds': 0.05,
+        '_test_mode': True,  # Enable test mode for deterministic execution
         'champ_select_preferences': {
             'default': {
                 'bans': [1, 2, 3],
@@ -97,17 +91,15 @@ def test_fallback_to_default_when_role_list_empty_ban(feature, caplog):
     # Mock API responses
     feature.api_client.get.side_effect = [
         [1, 2, 3, 10, 11, 12],  # All champions available (initial)
-        session,  # Re-fetch after delay
+        session,  # Re-fetch after delay (in test mode, no actual delay)
         [1, 2, 3, 10, 11, 12],  # All champions available (after delay)
     ]
     feature.api_client.patch.return_value = {}
     
-    # Process the session
+    # Process the session (in test mode, this executes synchronously)
     feature._process_session(session)
     
-    # Wait for thread to complete
-    if feature.pending_action_thread:
-        feature.pending_action_thread.join(timeout=3)
+    # In test mode, action completes immediately, no need to wait for thread
     
     # Check that it logged the fallback
     assert any('falling back to default' in record.message.lower() for record in caplog.records)
@@ -151,12 +143,8 @@ def test_fallback_to_default_when_role_list_empty_pick(feature, caplog):
     ]
     feature.api_client.patch.return_value = {}
     
-    # Process the session
+    # Process the session (in test mode, this executes synchronously)
     feature._process_session(session)
-    
-    # Wait for thread to complete
-    if feature.pending_action_thread:
-        feature.pending_action_thread.join(timeout=3)
     
     # Check that it logged the fallback
     assert any('falling back to default' in record.message.lower() for record in caplog.records)
@@ -204,10 +192,6 @@ def test_no_fallback_when_role_has_list(feature, caplog):
     # Process the session
     feature._process_session(session)
     
-    # Wait for thread to complete
-    if feature.pending_action_thread:
-        feature.pending_action_thread.join(timeout=3)
-    
     # Should NOT fall back to default
     assert not any('falling back to default' in record.message.lower() for record in caplog.records)
     assert any('assigned role = jungle' in record.message.lower() for record in caplog.records)
@@ -252,10 +236,6 @@ def test_fallback_when_no_assigned_position(feature, caplog):
     # Process the session
     feature._process_session(session)
     
-    # Wait for thread to complete
-    if feature.pending_action_thread:
-        feature.pending_action_thread.join(timeout=3)
-    
     # Should use default directly (logged as "assigned role = default")
     assert any('assigned role = default' in record.message.lower() for record in caplog.records)
     assert any('using default list' in record.message.lower() for record in caplog.records)
@@ -298,10 +278,6 @@ def test_planning_hover_fallback(feature, caplog):
     
     # Process the session
     feature._process_session(session)
-    
-    # Wait for thread to complete
-    if feature.pending_action_thread:
-        feature.pending_action_thread.join(timeout=3)
     
     # Should fall back to default for picks
     assert any('falling back to default' in record.message.lower() for record in caplog.records)

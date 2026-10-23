@@ -60,6 +60,10 @@ class ChampSelectFeature(BaseFeature):
         # Safety margin (seconds to leave before timer expires)
         self.timer_safety_margin = 3.0
         
+        # Test mode: when True, execute actions synchronously without delays
+        self._test_mode = config.get('_test_mode', False)
+        self._test_delay_override = None  # For tests to control delay
+        
         # State tracking
         self.processed_actions = set()  # Track action IDs we've already processed
         self.champion_provider = ChampionDataProvider()
@@ -69,6 +73,7 @@ class ChampSelectFeature(BaseFeature):
         self.current_hover = None  # Track current hover to avoid duplicate hover calls
         self.pending_action_thread = None  # Track pending delayed action
         self.cancel_pending_action = threading.Event()  # Signal to cancel pending action
+        self.action_completed = threading.Event()  # Signal that action completed (for tests)
     
     def initialize(self, event_bus, api_client):
         """Initialize the champion select feature."""
@@ -183,6 +188,14 @@ class ChampSelectFeature(BaseFeature):
         Returns:
             Safe delay in seconds (may be capped)
         """
+        # Test mode override
+        if self._test_delay_override is not None:
+            return self._test_delay_override
+        
+        # In test mode with no override, use zero delay
+        if self._test_mode:
+            return 0.0
+        
         # Generate random delay in range
         delay = random.uniform(min_delay, max_delay)
         
@@ -253,13 +266,26 @@ class ChampSelectFeature(BaseFeature):
             return
         self.processed_actions.add(planning_key)
         
-        # Start delayed action in background thread
-        self.pending_action_thread = threading.Thread(
-            target=self._execute_planning_hover,
-            args=(session, local_player_cell_id),
-            daemon=True
-        )
-        self.pending_action_thread.start()
+        # In test mode, execute synchronously
+        if self._test_mode:
+            self._execute_planning_hover(session, local_player_cell_id)
+            self.action_completed.set()
+        else:
+            # Start delayed action in background thread
+            self.action_completed.clear()
+            self.pending_action_thread = threading.Thread(
+                target=self._execute_planning_hover_wrapper,
+                args=(session, local_player_cell_id),
+                daemon=True
+            )
+            self.pending_action_thread.start()
+    
+    def _execute_planning_hover_wrapper(self, session: Dict[str, Any], local_player_cell_id: int):
+        """Wrapper to signal completion."""
+        try:
+            self._execute_planning_hover(session, local_player_cell_id)
+        finally:
+            self.action_completed.set()
     
     def _execute_planning_hover(self, session: Dict[str, Any], local_player_cell_id: int):
         """Execute planning phase hover after delay."""
@@ -280,13 +306,7 @@ class ChampSelectFeature(BaseFeature):
             if not pick_candidates:
                 return
             
-            # Calculate safe delay
-            delay = self._calculate_safe_delay(session, self.pick_delay_min, self.pick_delay_max)
-            if delay <= 0:
-                logger.info("PLANNING hover: no time left for delay")
-                return
-            
-            # Get first available champion for logging
+            # Get available picks
             pickable_ids = self._get_pickable_champions()
             banned = get_banned_champions(session)
             picked = get_picked_champions(session)
@@ -295,7 +315,7 @@ class ChampSelectFeature(BaseFeature):
             available = filter_available_champions(
                 pick_candidates,
                 pickable_ids,
-                set(),
+                set(),  # No bannable IDs for picks
                 'pick',
                 banned,
                 picked,
@@ -308,12 +328,22 @@ class ChampSelectFeature(BaseFeature):
             champ_id = available[0]
             champ_name = self.champion_provider.get_display_name(champ_id)
             
-            logger.info(f"PLANNING hover: waiting {delay:.1f}s before hovering {champ_name}")
+            # Calculate safe delay
+            delay = self._calculate_safe_delay(session, self.pick_delay_min, self.pick_delay_max)
             
-            # Wait with cancellation check
-            if self.cancel_pending_action.wait(delay):
-                logger.debug("PLANNING hover cancelled")
+            # In test mode, execute immediately without delay
+            if self._test_mode:
+                logger.debug(f"PLANNING hover: test mode, hovering {champ_name} immediately")
+            elif delay <= 0:
+                logger.info("PLANNING hover: no time left for delay")
                 return
+            else:
+                logger.info(f"PLANNING hover: waiting {delay:.1f}s before hovering {champ_name}")
+                
+                # Wait with cancellation check
+                if self.cancel_pending_action.wait(delay):
+                    logger.debug("PLANNING hover cancelled")
+                    return
             
             # Re-fetch session and validate
             current_session = self._get_current_session()
@@ -376,13 +406,31 @@ class ChampSelectFeature(BaseFeature):
         # Cancel any existing pending action
         self._cancel_pending_actions()
         
-        # Start delayed action in background thread
-        self.pending_action_thread = threading.Thread(
-            target=self._execute_ban_action,
-            args=(session, action, local_player_cell_id),
-            daemon=True
-        )
-        self.pending_action_thread.start()
+        # In test mode, execute synchronously
+        if self._test_mode:
+            self._execute_ban_action(session, action, local_player_cell_id)
+            self.action_completed.set()
+        else:
+            # Start delayed action in background thread
+            self.action_completed.clear()
+            self.pending_action_thread = threading.Thread(
+                target=self._execute_ban_action_wrapper,
+                args=(session, action, local_player_cell_id),
+                daemon=True
+            )
+            self.pending_action_thread.start()
+    
+    def _execute_ban_action_wrapper(
+        self,
+        session: Dict[str, Any],
+        action: Dict[str, Any],
+        local_player_cell_id: int
+    ):
+        """Wrapper to signal completion."""
+        try:
+            self._execute_ban_action(session, action, local_player_cell_id)
+        finally:
+            self.action_completed.set()
     
     def _execute_ban_action(
         self,
@@ -439,7 +487,11 @@ class ChampSelectFeature(BaseFeature):
             
             # Calculate safe delay
             delay = self._calculate_safe_delay(session, self.ban_delay_min, self.ban_delay_max)
-            if delay <= 0:
+            
+            # In test mode, execute immediately without delay
+            if self._test_mode:
+                logger.debug(f"Auto-ban: test mode, banning {champ_name} immediately")
+            elif delay <= 0:
                 logger.info(f"Auto-ban: no time left for delay, banning {champ_name} immediately")
             else:
                 logger.info(f"Auto-ban: waiting {delay:.1f}s before banning {champ_name}")
@@ -520,13 +572,31 @@ class ChampSelectFeature(BaseFeature):
         # Cancel any existing pending action
         self._cancel_pending_actions()
         
-        # Start delayed action in background thread
-        self.pending_action_thread = threading.Thread(
-            target=self._execute_pick_action,
-            args=(session, action, local_player_cell_id),
-            daemon=True
-        )
-        self.pending_action_thread.start()
+        # In test mode, execute synchronously
+        if self._test_mode:
+            self._execute_pick_action(session, action, local_player_cell_id)
+            self.action_completed.set()
+        else:
+            # Start delayed action in background thread
+            self.action_completed.clear()
+            self.pending_action_thread = threading.Thread(
+                target=self._execute_pick_action_wrapper,
+                args=(session, action, local_player_cell_id),
+                daemon=True
+            )
+            self.pending_action_thread.start()
+    
+    def _execute_pick_action_wrapper(
+        self,
+        session: Dict[str, Any],
+        action: Dict[str, Any],
+        local_player_cell_id: int
+    ):
+        """Wrapper to signal completion."""
+        try:
+            self._execute_pick_action(session, action, local_player_cell_id)
+        finally:
+            self.action_completed.set()
     
     def _execute_pick_action(
         self,
@@ -585,7 +655,10 @@ class ChampSelectFeature(BaseFeature):
             delay = self._calculate_safe_delay(session, self.pick_delay_min, self.pick_delay_max)
             action_type = "lock" if self.pick_mode == 'lock' else "hover"
             
-            if delay <= 0:
+            # In test mode, execute immediately without delay
+            if self._test_mode:
+                logger.debug(f"Auto-pick: test mode, {action_type}ing {champ_name} immediately")
+            elif delay <= 0:
                 logger.info(f"Auto-pick: no time left for delay, {action_type}ing {champ_name} immediately")
             else:
                 logger.info(f"Auto-pick: waiting {delay:.1f}s before {action_type}ing {champ_name}")
