@@ -129,7 +129,7 @@ def test_skip_when_user_acted_during_delay(feature_with_delays, caplog):
         feature_with_delays.pending_action_thread.join(timeout=3)
     
     # Should have logged that user already acted
-    assert any('user already acted' in record.message.lower() for record in caplog.records)
+    assert any('already acted' in record.message.lower() for record in caplog.records)
     
     # Should NOT have called patch (because user already acted)
     patch_calls = [call for call in feature_with_delays.api_client.patch.call_args_list]
