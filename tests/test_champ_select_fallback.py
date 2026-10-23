@@ -15,6 +15,13 @@ def feature():
         'auto_ban_enabled': True,
         'auto_pick_enabled': True,
         'pick_mode': 'hover',
+        # Keep the delay tiny and fixed. The default 1–3s range can outlast
+        # join(timeout=3) when the roll is 3s, so the assertion flakes.
+        # PLANNING hover skips the action when the delay is zero, so stay above 0.
+        'ban_delay_min_seconds': 0.05,
+        'ban_delay_max_seconds': 0.05,
+        'pick_delay_min_seconds': 0.05,
+        'pick_delay_max_seconds': 0.05,
         'champ_select_preferences': {
             'default': {
                 'bans': [1, 2, 3],
