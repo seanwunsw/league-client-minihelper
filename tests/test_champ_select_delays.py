@@ -1,6 +1,7 @@
 """Tests for champion select feature delay functionality."""
 import pytest
 import time
+import logging
 import threading
 from unittest.mock import Mock, MagicMock, patch
 from features.champ_select import ChampSelectFeature
@@ -9,6 +10,9 @@ from features.champ_select import ChampSelectFeature
 @pytest.fixture
 def feature_with_delays():
     """Create a champion select feature with configured delays."""
+    # Set logging level to DEBUG to capture debug messages
+    logging.getLogger('features.champ_select').setLevel(logging.DEBUG)
+    
     config = {
         'auto_ban_enabled': True,
         'auto_pick_enabled': True,
