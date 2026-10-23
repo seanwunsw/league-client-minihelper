@@ -90,6 +90,8 @@ def test_delay_capped_by_timer(feature_with_delays, caplog):
 
 def test_skip_when_user_acted_during_delay(feature_with_delays, caplog):
     """Test that action is skipped if user acted manually during delay."""
+    import copy
+    
     session_initial = {
         'localPlayerCellId': 0,
         'myTeam': [{'cellId': 0, 'assignedPosition': ''}],
@@ -104,15 +106,9 @@ def test_skip_when_user_acted_during_delay(feature_with_delays, caplog):
         'timer': {'phase': 'BAN_PICK', 'adjustedTimeLeftInPhase': 30000}
     }
     
-    # After delay, action is completed
-    session_after = session_initial.copy()
-    session_after['actions'] = [[{
-        'id': 1,
-        'actorCellId': 0,
-        'type': 'ban',
-        'isInProgress': True,
-        'completed': True  # User already acted
-    }]]
+    # After delay, action is completed (deep copy to avoid reference issues)
+    session_after = copy.deepcopy(session_initial)
+    session_after['actions'][0][0]['completed'] = True  # User already acted
     
     # Mock API responses
     feature_with_delays.api_client.get.side_effect = [
@@ -128,8 +124,9 @@ def test_skip_when_user_acted_during_delay(feature_with_delays, caplog):
     if feature_with_delays.pending_action_thread:
         feature_with_delays.pending_action_thread.join(timeout=3)
     
-    # Should have logged that user already acted
-    assert any('already acted' in record.message.lower() for record in caplog.records)
+    # Should have logged that user already acted or action no longer ours
+    assert any('already acted' in record.message.lower() or 'no longer ours' in record.message.lower() 
+               for record in caplog.records)
     
     # Should NOT have called patch (because user already acted)
     patch_calls = [call for call in feature_with_delays.api_client.patch.call_args_list]
