@@ -2,6 +2,7 @@
 import logging
 import time
 import threading
+import random
 from typing import Optional, Dict, Any, List, Set
 from features.base_feature import BaseFeature
 from features.champion_data import ChampionDataProvider
@@ -42,10 +43,22 @@ class ChampSelectFeature(BaseFeature):
             'utility': {'bans': [], 'picks': []}
         })
         
-        # Delays
-        self.ban_delay = config.get('auto_ban_delay_seconds', 0.5)
-        self.pick_delay = config.get('auto_pick_delay_seconds', 0.5)
-        self.lock_delay = config.get('auto_lock_delay_seconds', 1.0)
+        # Random delays with backward compatibility
+        # Ban delay range
+        self.ban_delay_min = config.get('ban_delay_min_seconds', 
+                                        config.get('auto_ban_delay_seconds', 1.0))
+        self.ban_delay_max = config.get('ban_delay_max_seconds', 3.0)
+        self._validate_delay_range('ban', self.ban_delay_min, self.ban_delay_max)
+        
+        # Pick delay range (replaces old lock_delay)
+        self.pick_delay_min = config.get('pick_delay_min_seconds',
+                                        config.get('auto_pick_delay_seconds', 
+                                                  config.get('auto_lock_delay_seconds', 1.0)))
+        self.pick_delay_max = config.get('pick_delay_max_seconds', 3.0)
+        self._validate_delay_range('pick', self.pick_delay_min, self.pick_delay_max)
+        
+        # Safety margin (seconds to leave before timer expires)
+        self.timer_safety_margin = 3.0
         
         # State tracking
         self.processed_actions = set()  # Track action IDs we've already processed
@@ -54,6 +67,8 @@ class ChampSelectFeature(BaseFeature):
         self.champion_reverse_map = {}  # id -> name mapping
         self.last_session_state = None
         self.current_hover = None  # Track current hover to avoid duplicate hover calls
+        self.pending_action_thread = None  # Track pending delayed action
+        self.cancel_pending_action = threading.Event()  # Signal to cancel pending action
     
     def initialize(self, event_bus, api_client):
         """Initialize the champion select feature."""
@@ -67,11 +82,26 @@ class ChampSelectFeature(BaseFeature):
         
         logger.info(
             f"Champion select feature initialized (auto_ban: {self.auto_ban_enabled}, "
-            f"auto_pick: {self.auto_pick_enabled}, pick_mode: {self.pick_mode})"
+            f"auto_pick: {self.auto_pick_enabled}, pick_mode: {self.pick_mode}, "
+            f"ban_delay: {self.ban_delay_min}-{self.ban_delay_max}s, "
+            f"pick_delay: {self.pick_delay_min}-{self.pick_delay_max}s)"
         )
     
     def get_name(self) -> str:
         return "Champion Select"
+    
+    def _validate_delay_range(self, name: str, min_val: float, max_val: float):
+        """Validate delay range values."""
+        if min_val < 0:
+            logger.warning(f"{name} delay min ({min_val}) is negative, using 0")
+            setattr(self, f'{name}_delay_min', 0.0)
+        if max_val < 0:
+            logger.warning(f"{name} delay max ({max_val}) is negative, using 0")
+            setattr(self, f'{name}_delay_max', 0.0)
+        if min_val > max_val:
+            logger.warning(f"{name} delay min ({min_val}) > max ({max_val}), swapping")
+            setattr(self, f'{name}_delay_min', max_val)
+            setattr(self, f'{name}_delay_max', min_val)
     
     def _load_champion_data(self):
         """Load champion name<->ID mapping from client."""
@@ -110,6 +140,7 @@ class ChampSelectFeature(BaseFeature):
             # Handle null data (champ select ended)
             if data is None:
                 logger.debug(f"Champion select ended (null data, eventType={event_type})")
+                self._cancel_pending_actions()
                 self.processed_actions.clear()
                 self.current_hover = None
                 return
@@ -119,6 +150,64 @@ class ChampSelectFeature(BaseFeature):
             
         except Exception as e:
             logger.error(f"Error handling champ select event: {e}", exc_info=True)
+    
+    def _cancel_pending_actions(self):
+        """Cancel any pending delayed actions."""
+        self.cancel_pending_action.set()
+        if self.pending_action_thread and self.pending_action_thread.is_alive():
+            logger.debug("Canceling pending action")
+            self.pending_action_thread.join(timeout=0.5)
+        self.cancel_pending_action.clear()
+    
+    def _get_time_left(self, session: Dict[str, Any]) -> Optional[float]:
+        """Get adjusted time left in phase from session timer (in seconds)."""
+        timer = session.get('timer', {})
+        if not timer:
+            return None
+        
+        adjusted_time_ms = timer.get('adjustedTimeLeftInPhase')
+        if adjusted_time_ms is None or adjusted_time_ms < 0:
+            return None
+        
+        return adjusted_time_ms / 1000.0  # Convert ms to seconds
+    
+    def _calculate_safe_delay(self, session: Dict[str, Any], min_delay: float, max_delay: float) -> float:
+        """
+        Calculate a safe random delay that won't exceed the timer.
+        
+        Args:
+            session: Champion select session
+            min_delay: Minimum delay (seconds)
+            max_delay: Maximum delay (seconds)
+            
+        Returns:
+            Safe delay in seconds (may be capped)
+        """
+        # Generate random delay in range
+        delay = random.uniform(min_delay, max_delay)
+        
+        # Check timer
+        time_left = self._get_time_left(session)
+        if time_left is not None:
+            # Cap delay to leave safety margin
+            max_safe_delay = max(0, time_left - self.timer_safety_margin)
+            if delay > max_safe_delay:
+                logger.debug(f"Capping delay {delay:.1f}s to {max_safe_delay:.1f}s (time_left: {time_left:.1f}s)")
+                delay = max_safe_delay
+        
+        return delay
+    
+    def _get_current_session(self) -> Optional[Dict[str, Any]]:
+        """Re-fetch current champion select session."""
+        if not self.api_client:
+            return None
+        
+        try:
+            response = self.api_client.get('/lol-champ-select/v1/session')
+            return response if response else None
+        except Exception as e:
+            logger.debug(f"Failed to fetch current session: {e}")
+            return None
     
     def _process_session(self, session: Dict[str, Any]):
         """Process champion select session and take actions."""
@@ -154,51 +243,119 @@ class ChampSelectFeature(BaseFeature):
             self._handle_pick_action(session, my_action, local_player_cell_id)
     
     def _handle_planning_hover(self, session: Dict[str, Any], local_player_cell_id: int):
-        """Hover top pick during PLANNING phase."""
-        position = get_assigned_position(session, local_player_cell_id)
-        role_to_use = position if position else 'default'
+        """Hover top pick during PLANNING phase with delay."""
+        # Cancel any existing pending action
+        self._cancel_pending_actions()
         
-        preferences = self.role_preferences.get(role_to_use, {})
-        pick_candidates = preferences.get('picks', [])
-        
-        # Fall back to default if role list is empty
-        if not pick_candidates and role_to_use != 'default':
-            logger.info(f"No picks for {role_to_use}, falling back to default")
-            role_to_use = 'default'
-            preferences = self.role_preferences.get('default', {})
-            pick_candidates = preferences.get('picks', [])
-        
-        if not pick_candidates:
+        # Mark as processing to prevent duplicate handling
+        planning_key = 'planning_hover'
+        if planning_key in self.processed_actions:
             return
+        self.processed_actions.add(planning_key)
         
-        # Get available picks
-        pickable_ids = self._get_pickable_champions()
-        banned = get_banned_champions(session)
-        picked = get_picked_champions(session)
-        teammate_intents = get_teammate_intents(session, local_player_cell_id)
-        
-        available = filter_available_champions(
-            pick_candidates,
-            pickable_ids,
-            set(),
-            'pick',
-            banned,
-            picked,
-            teammate_intents
+        # Start delayed action in background thread
+        self.pending_action_thread = threading.Thread(
+            target=self._execute_planning_hover,
+            args=(session, local_player_cell_id),
+            daemon=True
         )
-        
-        if available and available[0] != self.current_hover:
+        self.pending_action_thread.start()
+    
+    def _execute_planning_hover(self, session: Dict[str, Any], local_player_cell_id: int):
+        """Execute planning phase hover after delay."""
+        try:
+            position = get_assigned_position(session, local_player_cell_id)
+            role_to_use = position if position else 'default'
+            
+            preferences = self.role_preferences.get(role_to_use, {})
+            pick_candidates = preferences.get('picks', [])
+            
+            # Fall back to default if role list is empty
+            if not pick_candidates and role_to_use != 'default':
+                logger.info(f"No picks for {role_to_use}, falling back to default")
+                role_to_use = 'default'
+                preferences = self.role_preferences.get('default', {})
+                pick_candidates = preferences.get('picks', [])
+            
+            if not pick_candidates:
+                return
+            
+            # Calculate safe delay
+            delay = self._calculate_safe_delay(session, self.pick_delay_min, self.pick_delay_max)
+            if delay <= 0:
+                logger.info("PLANNING hover: no time left for delay")
+                return
+            
+            # Get first available champion for logging
+            pickable_ids = self._get_pickable_champions()
+            banned = get_banned_champions(session)
+            picked = get_picked_champions(session)
+            teammate_intents = get_teammate_intents(session, local_player_cell_id)
+            
+            available = filter_available_champions(
+                pick_candidates,
+                pickable_ids,
+                set(),
+                'pick',
+                banned,
+                picked,
+                teammate_intents
+            )
+            
+            if not available:
+                return
+            
             champ_id = available[0]
             champ_name = self.champion_provider.get_display_name(champ_id)
-            logger.info(f"PLANNING phase: hovering {champ_name} (assigned role: {position or 'none'}, using {role_to_use.capitalize()} list)")
             
-            # Hover via any pick action (doesn't have to be ours)
-            actions = flatten_actions(session)
-            for action in actions:
-                if action.get('type') == 'pick':
-                    self._patch_action(action['id'], champ_id, completed=False)
-                    self.current_hover = champ_id
-                    break
+            logger.info(f"PLANNING hover: waiting {delay:.1f}s before hovering {champ_name}")
+            
+            # Wait with cancellation check
+            if self.cancel_pending_action.wait(delay):
+                logger.debug("PLANNING hover cancelled")
+                return
+            
+            # Re-fetch session and validate
+            current_session = self._get_current_session()
+            if not current_session:
+                logger.debug("PLANNING hover: session ended during delay")
+                return
+            
+            # Check still in PLANNING phase
+            if not should_hover_during_planning(current_session):
+                logger.debug("PLANNING hover: no longer in PLANNING phase")
+                return
+            
+            # Re-select candidates (may have changed)
+            pickable_ids = self._get_pickable_champions()
+            banned = get_banned_champions(current_session)
+            picked = get_picked_champions(current_session)
+            teammate_intents = get_teammate_intents(current_session, local_player_cell_id)
+            
+            available = filter_available_champions(
+                pick_candidates,
+                pickable_ids,
+                set(),
+                'pick',
+                banned,
+                picked,
+                teammate_intents
+            )
+            
+            if available and available[0] != self.current_hover:
+                champ_id = available[0]
+                champ_name = self.champion_provider.get_display_name(champ_id)
+                logger.info(f"PLANNING phase: hovering {champ_name} (assigned role: {position or 'none'}, using {role_to_use.capitalize()} list)")
+                
+                # Hover via any pick action
+                actions = flatten_actions(current_session)
+                for action in actions:
+                    if action.get('type') == 'pick':
+                        self._patch_action(action['id'], champ_id, completed=False)
+                        self.current_hover = champ_id
+                        break
+        except Exception as e:
+            logger.error(f"Error in planning hover: {e}", exc_info=True)
     
     def _handle_ban_action(
         self,
@@ -206,65 +363,143 @@ class ChampSelectFeature(BaseFeature):
         action: Dict[str, Any],
         local_player_cell_id: int
     ):
-        """Handle ban action."""
+        """Handle ban action with delay."""
         action_id = action['id']
-        position = get_assigned_position(session, local_player_cell_id)
-        role_to_use = position if position else 'default'
         
-        preferences = self.role_preferences.get(role_to_use, {})
-        ban_candidates = preferences.get('bans', [])
-        
-        # Fall back to default if role list is empty
-        if not ban_candidates and role_to_use != 'default':
-            logger.info(f"No bans for {role_to_use}, falling back to default")
-            role_to_use = 'default'
-            preferences = self.role_preferences.get('default', {})
-            ban_candidates = preferences.get('bans', [])
-        
-        if not ban_candidates:
-            logger.info(f"No ban preferences, skipping auto-ban")
-            self.processed_actions.add(action_id)
+        # Check if already processed
+        if action_id in self.processed_actions:
             return
         
-        logger.info(f"Champ select: assigned role = {position or 'none'}, using {role_to_use.capitalize()} list")
-        
-        # Get available bans
-        bannable_ids = self._get_bannable_champions()
-        banned = get_banned_champions(session)
-        picked = get_picked_champions(session)
-        teammate_intents = get_teammate_intents(session, local_player_cell_id)
-        
-        available = filter_available_champions(
-            ban_candidates,
-            set(),
-            bannable_ids,
-            'ban',
-            banned,
-            picked,
-            teammate_intents
-        )
-        
-        if not available:
-            logger.info(f"No available bans from preferences, skipping")
-            self.processed_actions.add(action_id)
-            return
-        
-        # Try each candidate
-        for champ_id in available:
-            champ_name = self.champion_provider.get_display_name(champ_id)
-            logger.info(f"Auto-banning {champ_name}")
-            
-            time.sleep(self.ban_delay)
-            
-            if self._patch_action(action_id, champ_id, completed=True):
-                logger.info(f"[OK] Successfully banned {champ_name}")
-                self.processed_actions.add(action_id)
-                return
-            else:
-                logger.warning(f"Failed to ban {champ_id}, trying next candidate...")
-        
-        logger.warning("All ban candidates failed")
+        # Mark as processing
         self.processed_actions.add(action_id)
+        
+        # Cancel any existing pending action
+        self._cancel_pending_actions()
+        
+        # Start delayed action in background thread
+        self.pending_action_thread = threading.Thread(
+            target=self._execute_ban_action,
+            args=(session, action, local_player_cell_id),
+            daemon=True
+        )
+        self.pending_action_thread.start()
+    
+    def _execute_ban_action(
+        self,
+        session: Dict[str, Any],
+        action: Dict[str, Any],
+        local_player_cell_id: int
+    ):
+        """Execute ban action after delay."""
+        action_id = action['id']
+        
+        try:
+            position = get_assigned_position(session, local_player_cell_id)
+            role_to_use = position if position else 'default'
+            
+            preferences = self.role_preferences.get(role_to_use, {})
+            ban_candidates = preferences.get('bans', [])
+            
+            # Fall back to default if role list is empty
+            if not ban_candidates and role_to_use != 'default':
+                logger.info(f"No bans for {role_to_use}, falling back to default")
+                role_to_use = 'default'
+                preferences = self.role_preferences.get('default', {})
+                ban_candidates = preferences.get('bans', [])
+            
+            if not ban_candidates:
+                logger.info(f"No ban preferences, skipping auto-ban")
+                return
+            
+            logger.info(f"Champ select: assigned role = {position or 'none'}, using {role_to_use.capitalize()} list")
+            
+            # Get available bans
+            bannable_ids = self._get_bannable_champions()
+            banned = get_banned_champions(session)
+            picked = get_picked_champions(session)
+            teammate_intents = get_teammate_intents(session, local_player_cell_id)
+            
+            available = filter_available_champions(
+                ban_candidates,
+                set(),
+                bannable_ids,
+                'ban',
+                banned,
+                picked,
+                teammate_intents
+            )
+            
+            if not available:
+                logger.info(f"No available bans from preferences, skipping")
+                return
+            
+            # Get first candidate for logging
+            champ_id = available[0]
+            champ_name = self.champion_provider.get_display_name(champ_id)
+            
+            # Calculate safe delay
+            delay = self._calculate_safe_delay(session, self.ban_delay_min, self.ban_delay_max)
+            if delay <= 0:
+                logger.info(f"Auto-ban: no time left for delay, banning {champ_name} immediately")
+            else:
+                logger.info(f"Auto-ban: waiting {delay:.1f}s before banning {champ_name}")
+                
+                # Wait with cancellation check
+                if self.cancel_pending_action.wait(delay):
+                    logger.debug("Ban action cancelled")
+                    return
+            
+            # Re-fetch session and validate
+            current_session = self._get_current_session()
+            if not current_session:
+                logger.debug("Ban: session ended during delay")
+                return
+            
+            # Re-find our action
+            my_action = find_my_action(current_session, local_player_cell_id)
+            if not my_action or my_action.get('id') != action_id:
+                logger.debug("Ban: action no longer ours or changed")
+                return
+            
+            if my_action.get('completed'):
+                logger.debug("Ban: user already acted manually")
+                return
+            
+            # Re-select candidates (may have changed)
+            bannable_ids = self._get_bannable_champions()
+            banned = get_banned_champions(current_session)
+            picked = get_picked_champions(current_session)
+            teammate_intents = get_teammate_intents(current_session, local_player_cell_id)
+            
+            available = filter_available_champions(
+                ban_candidates,
+                set(),
+                bannable_ids,
+                'ban',
+                banned,
+                picked,
+                teammate_intents
+            )
+            
+            if not available:
+                logger.info(f"No available bans after delay, skipping")
+                return
+            
+            # Try each candidate
+            for champ_id in available:
+                champ_name = self.champion_provider.get_display_name(champ_id)
+                logger.info(f"Auto-banning {champ_name}")
+                
+                if self._patch_action(action_id, champ_id, completed=True):
+                    logger.info(f"[OK] Successfully banned {champ_name}")
+                    return
+                else:
+                    logger.warning(f"Failed to ban {champ_id}, trying next candidate...")
+            
+            logger.warning("All ban candidates failed")
+            
+        except Exception as e:
+            logger.error(f"Error in ban action: {e}", exc_info=True)
     
     def _handle_pick_action(
         self,
@@ -272,79 +507,158 @@ class ChampSelectFeature(BaseFeature):
         action: Dict[str, Any],
         local_player_cell_id: int
     ):
-        """Handle pick action."""
+        """Handle pick action with delay."""
         action_id = action['id']
-        position = get_assigned_position(session, local_player_cell_id)
-        role_to_use = position if position else 'default'
         
-        preferences = self.role_preferences.get(role_to_use, {})
-        pick_candidates = preferences.get('picks', [])
-        
-        # Fall back to default if role list is empty
-        if not pick_candidates and role_to_use != 'default':
-            logger.info(f"No picks for {role_to_use}, falling back to default")
-            role_to_use = 'default'
-            preferences = self.role_preferences.get('default', {})
-            pick_candidates = preferences.get('picks', [])
-        
-        if not pick_candidates:
-            logger.info(f"No pick preferences, skipping auto-pick")
-            self.processed_actions.add(action_id)
+        # Check if already processed
+        if action_id in self.processed_actions:
             return
         
-        logger.info(f"Champ select: assigned role = {position or 'none'}, using {role_to_use.capitalize()} list")
+        # Mark as processing
+        self.processed_actions.add(action_id)
         
-        # Get available picks
-        pickable_ids = self._get_pickable_champions()
-        banned = get_banned_champions(session)
-        picked = get_picked_champions(session)
-        teammate_intents = get_teammate_intents(session, local_player_cell_id)
+        # Cancel any existing pending action
+        self._cancel_pending_actions()
         
-        available = filter_available_champions(
-            pick_candidates,
-            pickable_ids,
-            set(),
-            'pick',
-            banned,
-            picked,
-            teammate_intents
+        # Start delayed action in background thread
+        self.pending_action_thread = threading.Thread(
+            target=self._execute_pick_action,
+            args=(session, action, local_player_cell_id),
+            daemon=True
         )
+        self.pending_action_thread.start()
+    
+    def _execute_pick_action(
+        self,
+        session: Dict[str, Any],
+        action: Dict[str, Any],
+        local_player_cell_id: int
+    ):
+        """Execute pick action after delay."""
+        action_id = action['id']
         
-        if not available:
-            logger.info(f"No available picks from preferences, skipping")
-            self.processed_actions.add(action_id)
-            return
-        
-        # Try each candidate
-        for champ_id in available:
+        try:
+            position = get_assigned_position(session, local_player_cell_id)
+            role_to_use = position if position else 'default'
+            
+            preferences = self.role_preferences.get(role_to_use, {})
+            pick_candidates = preferences.get('picks', [])
+            
+            # Fall back to default if role list is empty
+            if not pick_candidates and role_to_use != 'default':
+                logger.info(f"No picks for {role_to_use}, falling back to default")
+                role_to_use = 'default'
+                preferences = self.role_preferences.get('default', {})
+                pick_candidates = preferences.get('picks', [])
+            
+            if not pick_candidates:
+                logger.info(f"No pick preferences, skipping auto-pick")
+                return
+            
+            logger.info(f"Champ select: assigned role = {position or 'none'}, using {role_to_use.capitalize()} list")
+            
+            # Get available picks
+            pickable_ids = self._get_pickable_champions()
+            banned = get_banned_champions(session)
+            picked = get_picked_champions(session)
+            teammate_intents = get_teammate_intents(session, local_player_cell_id)
+            
+            available = filter_available_champions(
+                pick_candidates,
+                pickable_ids,
+                set(),
+                'pick',
+                banned,
+                picked,
+                teammate_intents
+            )
+            
+            if not available:
+                logger.info(f"No available picks from preferences, skipping")
+                return
+            
+            # Get first candidate for logging
+            champ_id = available[0]
             champ_name = self.champion_provider.get_display_name(champ_id)
             
-            if self.pick_mode == 'lock':
-                logger.info(f"Auto-picking and locking {champ_name}")
-                time.sleep(self.pick_delay)
-                
-                if self._patch_action(action_id, champ_id, completed=True):
-                    logger.info(f"[OK] Successfully picked and locked {champ_name}")
-                    self.processed_actions.add(action_id)
-                    self.current_hover = None
-                    return
-                else:
-                    logger.warning(f"Failed to lock {champ_id}, trying next candidate...")
+            # Calculate safe delay
+            delay = self._calculate_safe_delay(session, self.pick_delay_min, self.pick_delay_max)
+            action_type = "lock" if self.pick_mode == 'lock' else "hover"
+            
+            if delay <= 0:
+                logger.info(f"Auto-pick: no time left for delay, {action_type}ing {champ_name} immediately")
             else:
-                # Hover mode
-                logger.info(f"Auto-hovering {champ_name}")
-                time.sleep(self.pick_delay)
+                logger.info(f"Auto-pick: waiting {delay:.1f}s before {action_type}ing {champ_name}")
                 
-                if self._patch_action(action_id, champ_id, completed=False):
-                    logger.info(f"[OK] Successfully hovered {champ_name}")
-                    self.processed_actions.add(action_id)
-                    self.current_hover = champ_id
+                # Wait with cancellation check
+                if self.cancel_pending_action.wait(delay):
+                    logger.debug("Pick action cancelled")
                     return
+            
+            # Re-fetch session and validate
+            current_session = self._get_current_session()
+            if not current_session:
+                logger.debug("Pick: session ended during delay")
+                return
+            
+            # Re-find our action
+            my_action = find_my_action(current_session, local_player_cell_id)
+            if not my_action or my_action.get('id') != action_id:
+                logger.debug("Pick: action no longer ours or changed")
+                return
+            
+            if my_action.get('completed'):
+                logger.debug("Pick: user already acted manually")
+                return
+            
+            # Re-select candidates (may have changed)
+            pickable_ids = self._get_pickable_champions()
+            banned = get_banned_champions(current_session)
+            picked = get_picked_champions(current_session)
+            teammate_intents = get_teammate_intents(current_session, local_player_cell_id)
+            
+            available = filter_available_champions(
+                pick_candidates,
+                pickable_ids,
+                set(),
+                'pick',
+                banned,
+                picked,
+                teammate_intents
+            )
+            
+            if not available:
+                logger.info(f"No available picks after delay, skipping")
+                return
+            
+            # Try each candidate
+            for champ_id in available:
+                champ_name = self.champion_provider.get_display_name(champ_id)
+                
+                if self.pick_mode == 'lock':
+                    logger.info(f"Auto-picking and locking {champ_name}")
+                    
+                    if self._patch_action(action_id, champ_id, completed=True):
+                        logger.info(f"[OK] Successfully picked and locked {champ_name}")
+                        self.current_hover = None
+                        return
+                    else:
+                        logger.warning(f"Failed to lock {champ_id}, trying next candidate...")
                 else:
-                    logger.warning(f"Failed to hover {champ_id}, trying next candidate...")
-        
-        logger.warning("All pick candidates failed")
-        self.processed_actions.add(action_id)
+                    # Hover mode
+                    logger.info(f"Auto-hovering {champ_name}")
+                    
+                    if self._patch_action(action_id, champ_id, completed=False):
+                        logger.info(f"[OK] Successfully hovered {champ_name}")
+                        self.current_hover = champ_id
+                        return
+                    else:
+                        logger.warning(f"Failed to hover {champ_id}, trying next candidate...")
+            
+            logger.warning("All pick candidates failed")
+            
+        except Exception as e:
+            logger.error(f"Error in pick action: {e}", exc_info=True)
     
     def _get_pickable_champions(self) -> Set[int]:
         """Get pickable champion IDs from API."""
@@ -435,7 +749,11 @@ class ChampSelectFeature(BaseFeature):
             'auto_ban_enabled': self.auto_ban_enabled,
             'auto_pick_enabled': self.auto_pick_enabled,
             'pick_mode': self.pick_mode,
-            'role_preferences': self.role_preferences
+            'role_preferences': self.role_preferences,
+            'ban_delay_min_seconds': self.ban_delay_min,
+            'ban_delay_max_seconds': self.ban_delay_max,
+            'pick_delay_min_seconds': self.pick_delay_min,
+            'pick_delay_max_seconds': self.pick_delay_max
         }
     
     def update_setting(self, setting_name: str, value) -> bool:
@@ -458,6 +776,34 @@ class ChampSelectFeature(BaseFeature):
                 if isinstance(value, dict):
                     self.role_preferences = value
                     logger.info("Updated role preferences")
+                    return True
+            elif setting_name == 'ban_delay_min_seconds':
+                val = float(value)
+                if val >= 0:
+                    self.ban_delay_min = val
+                    self._validate_delay_range('ban', self.ban_delay_min, self.ban_delay_max)
+                    logger.info(f"Updated ban_delay_min_seconds to {val}")
+                    return True
+            elif setting_name == 'ban_delay_max_seconds':
+                val = float(value)
+                if val >= 0:
+                    self.ban_delay_max = val
+                    self._validate_delay_range('ban', self.ban_delay_min, self.ban_delay_max)
+                    logger.info(f"Updated ban_delay_max_seconds to {val}")
+                    return True
+            elif setting_name == 'pick_delay_min_seconds':
+                val = float(value)
+                if val >= 0:
+                    self.pick_delay_min = val
+                    self._validate_delay_range('pick', self.pick_delay_min, self.pick_delay_max)
+                    logger.info(f"Updated pick_delay_min_seconds to {val}")
+                    return True
+            elif setting_name == 'pick_delay_max_seconds':
+                val = float(value)
+                if val >= 0:
+                    self.pick_delay_max = val
+                    self._validate_delay_range('pick', self.pick_delay_min, self.pick_delay_max)
+                    logger.info(f"Updated pick_delay_max_seconds to {val}")
                     return True
         except Exception as e:
             logger.error(f"Error updating setting {setting_name}: {e}")

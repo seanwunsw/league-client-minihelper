@@ -56,6 +56,15 @@
                     <span>Auto-Ban</span>
                 </div>
                 
+                <div class="setting-group">
+                    <label>Ban delay (seconds)</label>
+                    <div class="range-inputs">
+                        <input type="number" id="ban-delay-min" min="0" max="30" step="0.1" value="1">
+                        <span>to</span>
+                        <input type="number" id="ban-delay-max" min="0" max="30" step="0.1" value="3">
+                    </div>
+                </div>
+                
                 <div class="toggle-container">
                     <label class="toggle">
                         <input type="checkbox" id="auto-pick-toggle">
@@ -66,6 +75,15 @@
                         <option value="hover">Hover</option>
                         <option value="lock">Lock</option>
                     </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label>Pick delay (seconds)</label>
+                    <div class="range-inputs">
+                        <input type="number" id="pick-delay-min" min="0" max="30" step="0.1" value="1">
+                        <span>to</span>
+                        <input type="number" id="pick-delay-max" min="0" max="30" step="0.1" value="3">
+                    </div>
                 </div>
                 
                 <div class="role-tabs">

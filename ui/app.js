@@ -31,12 +31,28 @@ document.addEventListener('DOMContentLoaded', () => {
         window.pywebview.api.update_setting('Champion Select', 'auto_ban_enabled', e.target.checked);
     });
     
+    document.getElementById('ban-delay-min').addEventListener('change', (e) => {
+        window.pywebview.api.update_setting('Champion Select', 'ban_delay_min_seconds', e.target.value);
+    });
+    
+    document.getElementById('ban-delay-max').addEventListener('change', (e) => {
+        window.pywebview.api.update_setting('Champion Select', 'ban_delay_max_seconds', e.target.value);
+    });
+    
     document.getElementById('auto-pick-toggle').addEventListener('change', (e) => {
         window.pywebview.api.update_setting('Champion Select', 'auto_pick_enabled', e.target.checked);
     });
     
     document.getElementById('pick-mode').addEventListener('change', (e) => {
         window.pywebview.api.update_setting('Champion Select', 'pick_mode', e.target.value);
+    });
+    
+    document.getElementById('pick-delay-min').addEventListener('change', (e) => {
+        window.pywebview.api.update_setting('Champion Select', 'pick_delay_min_seconds', e.target.value);
+    });
+    
+    document.getElementById('pick-delay-max').addEventListener('change', (e) => {
+        window.pywebview.api.update_setting('Champion Select', 'pick_delay_max_seconds', e.target.value);
     });
     
     // Role tabs
@@ -130,6 +146,12 @@ function render() {
         document.getElementById('auto-ban-toggle').checked = champSelect.settings.auto_ban_enabled || false;
         document.getElementById('auto-pick-toggle').checked = champSelect.settings.auto_pick_enabled || false;
         document.getElementById('pick-mode').value = champSelect.settings.pick_mode || 'hover';
+        
+        // Delay settings
+        document.getElementById('ban-delay-min').value = champSelect.settings.ban_delay_min_seconds || 1;
+        document.getElementById('ban-delay-max').value = champSelect.settings.ban_delay_max_seconds || 3;
+        document.getElementById('pick-delay-min').value = champSelect.settings.pick_delay_min_seconds || 1;
+        document.getElementById('pick-delay-max').value = champSelect.settings.pick_delay_max_seconds || 3;
         
         // Load champion list if not loaded
         if (champions.length === 0) {

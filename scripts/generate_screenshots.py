@@ -110,6 +110,10 @@ STATES = {
                     'auto_ban_enabled': True,
                     'auto_pick_enabled': True,
                     'pick_mode': 'hover',
+                    'ban_delay_min_seconds': 1.0,
+                    'ban_delay_max_seconds': 3.0,
+                    'pick_delay_min_seconds': 1.0,
+                    'pick_delay_max_seconds': 3.0,
                     'role_preferences': {
                         'default': {'bans': [266, 64, 7], 'picks': [103, 84, 245]},
                         'top': {'bans': [266, 86, 24], 'picks': [86, 58, 24]},
@@ -152,6 +156,10 @@ STATES = {
                     'auto_ban_enabled': True,
                     'auto_pick_enabled': True,
                     'pick_mode': 'hover',
+                    'ban_delay_min_seconds': 1.0,
+                    'ban_delay_max_seconds': 3.0,
+                    'pick_delay_min_seconds': 1.0,
+                    'pick_delay_max_seconds': 3.0,
                     'role_preferences': {
                         'default': {'bans': [266, 64, 7], 'picks': [103, 84, 245]},
                         'top': {'bans': [266, 86, 24], 'picks': [86, 58, 24]},
@@ -301,11 +309,13 @@ def generate_screenshots():
                     get_state: () => Promise.resolve({str(state_data).replace("'", '"').replace('True', 'true').replace('False', 'false').replace('None', 'null')}),
                     toggle_feature: () => Promise.resolve(true),
                     update_setting: () => Promise.resolve(true),
-                    get_logs: () => Promise.resolve([
-                        {{"level": "info", "message": "Champ select: assigned role = middle, using Middle list", "timestamp": "14:20:05"}},
-                        {{"level": "info", "message": "Auto-banning Aatrox 厄薩斯", "timestamp": "14:20:06"}},
-                        {{"level": "info", "message": "[OK] Successfully banned Aatrox 厄薩斯", "timestamp": "14:20:07"}}
-                    ])
+                        get_logs: () => Promise.resolve([
+                            {{"level": "info", "message": "Champ select: assigned role = middle, using Middle list", "timestamp": "14:20:05"}},
+                            {{"level": "info", "message": "Auto-ban: waiting 2.3s before banning Aatrox 厄薩斯", "timestamp": "14:20:06"}},
+                            {{"level": "info", "message": "[OK] Successfully banned Aatrox 厄薩斯", "timestamp": "14:20:09"}},
+                            {{"level": "info", "message": "Auto-pick: waiting 1.7s before hovering Ahri 阿璃", "timestamp": "14:20:15"}},
+                            {{"level": "info", "message": "[OK] Successfully hovered Ahri 阿璃", "timestamp": "14:20:17"}}
+                        ])
                 }}
             }};
         """)
