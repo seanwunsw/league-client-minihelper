@@ -1,0 +1,694 @@
+{
+  "266": {
+    "name_en": "Aatrox",
+    "name_zh_tw": "厄薩斯"
+  },
+  "103": {
+    "name_en": "Ahri",
+    "name_zh_tw": "阿璃"
+  },
+  "84": {
+    "name_en": "Akali",
+    "name_zh_tw": "阿卡莉"
+  },
+  "166": {
+    "name_en": "Akshan",
+    "name_zh_tw": "埃可尚"
+  },
+  "12": {
+    "name_en": "Alistar",
+    "name_zh_tw": "亞歷斯塔"
+  },
+  "799": {
+    "name_en": "Ambessa",
+    "name_zh_tw": "安比薩"
+  },
+  "32": {
+    "name_en": "Amumu",
+    "name_zh_tw": "阿姆姆"
+  },
+  "34": {
+    "name_en": "Anivia",
+    "name_zh_tw": "艾妮維亞"
+  },
+  "1": {
+    "name_en": "Annie",
+    "name_zh_tw": "安妮"
+  },
+  "523": {
+    "name_en": "Aphelios",
+    "name_zh_tw": "亞菲利歐"
+  },
+  "22": {
+    "name_en": "Ashe",
+    "name_zh_tw": "艾希"
+  },
+  "136": {
+    "name_en": "Aurelion Sol",
+    "name_zh_tw": "翱銳龍獸"
+  },
+  "893": {
+    "name_en": "Aurora",
+    "name_zh_tw": "歐羅拉"
+  },
+  "268": {
+    "name_en": "Azir",
+    "name_zh_tw": "阿祈爾"
+  },
+  "432": {
+    "name_en": "Bard",
+    "name_zh_tw": "巴德"
+  },
+  "200": {
+    "name_en": "Bel'Veth",
+    "name_zh_tw": "貝爾薇斯"
+  },
+  "53": {
+    "name_en": "Blitzcrank",
+    "name_zh_tw": "布里茨"
+  },
+  "63": {
+    "name_en": "Brand",
+    "name_zh_tw": "布蘭德"
+  },
+  "201": {
+    "name_en": "Braum",
+    "name_zh_tw": "布郎姆"
+  },
+  "233": {
+    "name_en": "Briar",
+    "name_zh_tw": "布蕾爾"
+  },
+  "51": {
+    "name_en": "Caitlyn",
+    "name_zh_tw": "凱特琳"
+  },
+  "164": {
+    "name_en": "Camille",
+    "name_zh_tw": "卡蜜兒"
+  },
+  "69": {
+    "name_en": "Cassiopeia",
+    "name_zh_tw": "卡莎碧雅"
+  },
+  "31": {
+    "name_en": "Cho'Gath",
+    "name_zh_tw": "科加斯"
+  },
+  "42": {
+    "name_en": "Corki",
+    "name_zh_tw": "庫奇"
+  },
+  "122": {
+    "name_en": "Darius",
+    "name_zh_tw": "達瑞斯"
+  },
+  "131": {
+    "name_en": "Diana",
+    "name_zh_tw": "黛安娜"
+  },
+  "119": {
+    "name_en": "Draven",
+    "name_zh_tw": "達瑞文"
+  },
+  "36": {
+    "name_en": "Dr. Mundo",
+    "name_zh_tw": "蒙多醫生"
+  },
+  "245": {
+    "name_en": "Ekko",
+    "name_zh_tw": "艾克"
+  },
+  "60": {
+    "name_en": "Elise",
+    "name_zh_tw": "伊莉絲"
+  },
+  "28": {
+    "name_en": "Evelynn",
+    "name_zh_tw": "伊芙琳"
+  },
+  "81": {
+    "name_en": "Ezreal",
+    "name_zh_tw": "伊澤瑞爾"
+  },
+  "9": {
+    "name_en": "Fiddlesticks",
+    "name_zh_tw": "費德提克"
+  },
+  "114": {
+    "name_en": "Fiora",
+    "name_zh_tw": "菲歐拉"
+  },
+  "105": {
+    "name_en": "Fizz",
+    "name_zh_tw": "飛斯"
+  },
+  "3": {
+    "name_en": "Galio",
+    "name_zh_tw": "加里歐"
+  },
+  "41": {
+    "name_en": "Gangplank",
+    "name_zh_tw": "剛普朗克"
+  },
+  "86": {
+    "name_en": "Garen",
+    "name_zh_tw": "蓋倫"
+  },
+  "150": {
+    "name_en": "Gnar",
+    "name_zh_tw": "吶兒"
+  },
+  "79": {
+    "name_en": "Gragas",
+    "name_zh_tw": "古拉格斯"
+  },
+  "104": {
+    "name_en": "Graves",
+    "name_zh_tw": "葛雷夫"
+  },
+  "887": {
+    "name_en": "Gwen",
+    "name_zh_tw": "關"
+  },
+  "120": {
+    "name_en": "Hecarim",
+    "name_zh_tw": "赫克林"
+  },
+  "74": {
+    "name_en": "Heimerdinger",
+    "name_zh_tw": "漢默丁格"
+  },
+  "910": {
+    "name_en": "Hwei",
+    "name_zh_tw": "赫威"
+  },
+  "420": {
+    "name_en": "Illaoi",
+    "name_zh_tw": "伊羅旖"
+  },
+  "39": {
+    "name_en": "Irelia",
+    "name_zh_tw": "伊瑞莉雅"
+  },
+  "427": {
+    "name_en": "Ivern",
+    "name_zh_tw": "埃爾文"
+  },
+  "40": {
+    "name_en": "Janna",
+    "name_zh_tw": "珍娜"
+  },
+  "59": {
+    "name_en": "Jarvan IV",
+    "name_zh_tw": "嘉文四世"
+  },
+  "24": {
+    "name_en": "Jax",
+    "name_zh_tw": "賈克斯"
+  },
+  "126": {
+    "name_en": "Jayce",
+    "name_zh_tw": "杰西"
+  },
+  "202": {
+    "name_en": "Jhin",
+    "name_zh_tw": "燼"
+  },
+  "222": {
+    "name_en": "Jinx",
+    "name_zh_tw": "吉茵珂絲"
+  },
+  "145": {
+    "name_en": "Kai'Sa",
+    "name_zh_tw": "凱莎"
+  },
+  "429": {
+    "name_en": "Kalista",
+    "name_zh_tw": "克黎思妲"
+  },
+  "43": {
+    "name_en": "Karma",
+    "name_zh_tw": "卡瑪"
+  },
+  "30": {
+    "name_en": "Karthus",
+    "name_zh_tw": "卡爾瑟斯"
+  },
+  "38": {
+    "name_en": "Kassadin",
+    "name_zh_tw": "卡薩丁"
+  },
+  "55": {
+    "name_en": "Katarina",
+    "name_zh_tw": "卡特蓮娜"
+  },
+  "10": {
+    "name_en": "Kayle",
+    "name_zh_tw": "凱爾"
+  },
+  "141": {
+    "name_en": "Kayn",
+    "name_zh_tw": "慨影"
+  },
+  "85": {
+    "name_en": "Kennen",
+    "name_zh_tw": "凱能"
+  },
+  "121": {
+    "name_en": "Kha'Zix",
+    "name_zh_tw": "卡力斯"
+  },
+  "203": {
+    "name_en": "Kindred",
+    "name_zh_tw": "鏡爪"
+  },
+  "240": {
+    "name_en": "Kled",
+    "name_zh_tw": "克雷德"
+  },
+  "96": {
+    "name_en": "Kog'Maw",
+    "name_zh_tw": "寇格魔"
+  },
+  "897": {
+    "name_en": "K'Sante",
+    "name_zh_tw": "卡桑帝"
+  },
+  "7": {
+    "name_en": "LeBlanc",
+    "name_zh_tw": "勒布朗"
+  },
+  "64": {
+    "name_en": "Lee Sin",
+    "name_zh_tw": "李星"
+  },
+  "89": {
+    "name_en": "Leona",
+    "name_zh_tw": "雷歐娜"
+  },
+  "876": {
+    "name_en": "Lillia",
+    "name_zh_tw": "莉莉亞"
+  },
+  "127": {
+    "name_en": "Lissandra",
+    "name_zh_tw": "麗珊卓"
+  },
+  "805": {
+    "name_en": "Locke",
+    "name_zh_tw": "洛克"
+  },
+  "236": {
+    "name_en": "Lucian",
+    "name_zh_tw": "路西恩"
+  },
+  "117": {
+    "name_en": "Lulu",
+    "name_zh_tw": "露璐"
+  },
+  "99": {
+    "name_en": "Lux",
+    "name_zh_tw": "拉克絲"
+  },
+  "54": {
+    "name_en": "Malphite",
+    "name_zh_tw": "墨菲特"
+  },
+  "90": {
+    "name_en": "Malzahar",
+    "name_zh_tw": "馬爾札哈"
+  },
+  "57": {
+    "name_en": "Maokai",
+    "name_zh_tw": "茂凱"
+  },
+  "11": {
+    "name_en": "Master Yi",
+    "name_zh_tw": "易大師"
+  },
+  "800": {
+    "name_en": "Mel",
+    "name_zh_tw": "梅爾"
+  },
+  "902": {
+    "name_en": "Milio",
+    "name_zh_tw": "米里歐"
+  },
+  "21": {
+    "name_en": "Miss Fortune",
+    "name_zh_tw": "好運姐"
+  },
+  "62": {
+    "name_en": "Wukong",
+    "name_zh_tw": "悟空"
+  },
+  "82": {
+    "name_en": "Mordekaiser",
+    "name_zh_tw": "魔鬥凱薩"
+  },
+  "25": {
+    "name_en": "Morgana",
+    "name_zh_tw": "魔甘娜"
+  },
+  "950": {
+    "name_en": "Naafiri",
+    "name_zh_tw": "娜菲芮"
+  },
+  "267": {
+    "name_en": "Nami",
+    "name_zh_tw": "娜米"
+  },
+  "75": {
+    "name_en": "Nasus",
+    "name_zh_tw": "納瑟斯"
+  },
+  "111": {
+    "name_en": "Nautilus",
+    "name_zh_tw": "納帝魯斯"
+  },
+  "518": {
+    "name_en": "Neeko",
+    "name_zh_tw": "妮可"
+  },
+  "76": {
+    "name_en": "Nidalee",
+    "name_zh_tw": "奈德麗"
+  },
+  "895": {
+    "name_en": "Nilah",
+    "name_zh_tw": "淣菈"
+  },
+  "56": {
+    "name_en": "Nocturne",
+    "name_zh_tw": "夜曲"
+  },
+  "20": {
+    "name_en": "Nunu & Willump",
+    "name_zh_tw": "努努和威朗普"
+  },
+  "2": {
+    "name_en": "Olaf",
+    "name_zh_tw": "歐拉夫"
+  },
+  "61": {
+    "name_en": "Orianna",
+    "name_zh_tw": "奧莉安娜"
+  },
+  "516": {
+    "name_en": "Ornn",
+    "name_zh_tw": "鄂爾"
+  },
+  "80": {
+    "name_en": "Pantheon",
+    "name_zh_tw": "潘森"
+  },
+  "78": {
+    "name_en": "Poppy",
+    "name_zh_tw": "波比"
+  },
+  "555": {
+    "name_en": "Pyke",
+    "name_zh_tw": "派克"
+  },
+  "246": {
+    "name_en": "Qiyana",
+    "name_zh_tw": "姬亞娜"
+  },
+  "133": {
+    "name_en": "Quinn",
+    "name_zh_tw": "葵恩"
+  },
+  "497": {
+    "name_en": "Rakan",
+    "name_zh_tw": "銳空"
+  },
+  "33": {
+    "name_en": "Rammus",
+    "name_zh_tw": "拉姆斯"
+  },
+  "421": {
+    "name_en": "Rek'Sai",
+    "name_zh_tw": "雷珂煞"
+  },
+  "526": {
+    "name_en": "Rell",
+    "name_zh_tw": "銳兒"
+  },
+  "888": {
+    "name_en": "Renata Glasc",
+    "name_zh_tw": "睿娜妲．格萊斯克"
+  },
+  "58": {
+    "name_en": "Renekton",
+    "name_zh_tw": "雷尼克頓"
+  },
+  "107": {
+    "name_en": "Rengar",
+    "name_zh_tw": "雷葛爾"
+  },
+  "92": {
+    "name_en": "Riven",
+    "name_zh_tw": "雷玟"
+  },
+  "68": {
+    "name_en": "Rumble",
+    "name_zh_tw": "藍寶"
+  },
+  "13": {
+    "name_en": "Ryze",
+    "name_zh_tw": "雷茲"
+  },
+  "360": {
+    "name_en": "Samira",
+    "name_zh_tw": "煞蜜拉"
+  },
+  "113": {
+    "name_en": "Sejuani",
+    "name_zh_tw": "史瓦妮"
+  },
+  "235": {
+    "name_en": "Senna",
+    "name_zh_tw": "姍娜"
+  },
+  "147": {
+    "name_en": "Seraphine",
+    "name_zh_tw": "瑟菈紛"
+  },
+  "875": {
+    "name_en": "Sett",
+    "name_zh_tw": "賽特"
+  },
+  "35": {
+    "name_en": "Shaco",
+    "name_zh_tw": "薩科"
+  },
+  "98": {
+    "name_en": "Shen",
+    "name_zh_tw": "慎"
+  },
+  "102": {
+    "name_en": "Shyvana",
+    "name_zh_tw": "希瓦娜"
+  },
+  "27": {
+    "name_en": "Singed",
+    "name_zh_tw": "辛吉德"
+  },
+  "14": {
+    "name_en": "Sion",
+    "name_zh_tw": "賽恩"
+  },
+  "15": {
+    "name_en": "Sivir",
+    "name_zh_tw": "希維爾"
+  },
+  "72": {
+    "name_en": "Skarner",
+    "name_zh_tw": "史加納"
+  },
+  "901": {
+    "name_en": "Smolder",
+    "name_zh_tw": "史矛德"
+  },
+  "37": {
+    "name_en": "Sona",
+    "name_zh_tw": "索娜"
+  },
+  "16": {
+    "name_en": "Soraka",
+    "name_zh_tw": "索拉卡"
+  },
+  "50": {
+    "name_en": "Swain",
+    "name_zh_tw": "斯溫"
+  },
+  "517": {
+    "name_en": "Sylas",
+    "name_zh_tw": "賽勒斯"
+  },
+  "134": {
+    "name_en": "Syndra",
+    "name_zh_tw": "星朵拉"
+  },
+  "223": {
+    "name_en": "Tahm Kench",
+    "name_zh_tw": "貪啃奇"
+  },
+  "163": {
+    "name_en": "Taliyah",
+    "name_zh_tw": "塔莉雅"
+  },
+  "91": {
+    "name_en": "Talon",
+    "name_zh_tw": "塔隆"
+  },
+  "44": {
+    "name_en": "Taric",
+    "name_zh_tw": "塔里克"
+  },
+  "17": {
+    "name_en": "Teemo",
+    "name_zh_tw": "提摩"
+  },
+  "412": {
+    "name_en": "Thresh",
+    "name_zh_tw": "瑟雷西"
+  },
+  "18": {
+    "name_en": "Tristana",
+    "name_zh_tw": "崔絲塔娜"
+  },
+  "48": {
+    "name_en": "Trundle",
+    "name_zh_tw": "特朗德"
+  },
+  "23": {
+    "name_en": "Tryndamere",
+    "name_zh_tw": "泰達米爾"
+  },
+  "4": {
+    "name_en": "Twisted Fate",
+    "name_zh_tw": "逆命"
+  },
+  "29": {
+    "name_en": "Twitch",
+    "name_zh_tw": "圖奇"
+  },
+  "77": {
+    "name_en": "Udyr",
+    "name_zh_tw": "烏迪爾"
+  },
+  "6": {
+    "name_en": "Urgot",
+    "name_zh_tw": "烏爾加特"
+  },
+  "110": {
+    "name_en": "Varus",
+    "name_zh_tw": "法洛士"
+  },
+  "67": {
+    "name_en": "Vayne",
+    "name_zh_tw": "汎"
+  },
+  "45": {
+    "name_en": "Veigar",
+    "name_zh_tw": "維迦"
+  },
+  "161": {
+    "name_en": "Vel'Koz",
+    "name_zh_tw": "威寇茲"
+  },
+  "711": {
+    "name_en": "Vex",
+    "name_zh_tw": "薇可絲"
+  },
+  "254": {
+    "name_en": "Vi",
+    "name_zh_tw": "菲艾"
+  },
+  "234": {
+    "name_en": "Viego",
+    "name_zh_tw": "維爾戈"
+  },
+  "112": {
+    "name_en": "Viktor",
+    "name_zh_tw": "維克特"
+  },
+  "8": {
+    "name_en": "Vladimir",
+    "name_zh_tw": "弗拉迪米爾"
+  },
+  "106": {
+    "name_en": "Volibear",
+    "name_zh_tw": "弗力貝爾"
+  },
+  "19": {
+    "name_en": "Warwick",
+    "name_zh_tw": "沃維克"
+  },
+  "498": {
+    "name_en": "Xayah",
+    "name_zh_tw": "剎雅"
+  },
+  "101": {
+    "name_en": "Xerath",
+    "name_zh_tw": "齊勒斯"
+  },
+  "5": {
+    "name_en": "Xin Zhao",
+    "name_zh_tw": "趙信"
+  },
+  "157": {
+    "name_en": "Yasuo",
+    "name_zh_tw": "犽宿"
+  },
+  "777": {
+    "name_en": "Yone",
+    "name_zh_tw": "犽凝"
+  },
+  "83": {
+    "name_en": "Yorick",
+    "name_zh_tw": "約瑞科"
+  },
+  "804": {
+    "name_en": "Yunara",
+    "name_zh_tw": "尤娜拉"
+  },
+  "350": {
+    "name_en": "Yuumi",
+    "name_zh_tw": "悠咪"
+  },
+  "904": {
+    "name_en": "Zaahen",
+    "name_zh_tw": "薩亨"
+  },
+  "154": {
+    "name_en": "Zac",
+    "name_zh_tw": "札克"
+  },
+  "238": {
+    "name_en": "Zed",
+    "name_zh_tw": "劫"
+  },
+  "221": {
+    "name_en": "Zeri",
+    "name_zh_tw": "婕莉"
+  },
+  "115": {
+    "name_en": "Ziggs",
+    "name_zh_tw": "希格斯"
+  },
+  "26": {
+    "name_en": "Zilean",
+    "name_zh_tw": "極靈"
+  },
+  "142": {
+    "name_en": "Zoe",
+    "name_zh_tw": "柔依"
+  },
+  "143": {
+    "name_en": "Zyra",
+    "name_zh_tw": "枷蘿"
+  }
+}

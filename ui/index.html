@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LoL Auto-Accept</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="combobox.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>⚔️ LoL Auto-Accept</h1>
+            <h1>⚔️ LoL Helper</h1>
             <div class="connection-status" id="connection-status">
                 <span class="status-dot" id="status-dot"></span>
                 <span id="status-text">Disconnected</span>
@@ -20,36 +21,105 @@
             <div class="phase-display" id="gameflow-phase">No Active Session</div>
         </section>
         
-        <section class="feature-section">
-            <h2>Auto-Accept Ready Check</h2>
-            <div class="toggle-container">
-                <label class="toggle">
-                    <input type="checkbox" id="auto-accept-toggle">
-                    <span class="toggle-slider"></span>
-                </label>
-                <span>Auto-Accept Enabled</span>
-            </div>
-            
-            <div class="setting-group">
-                <label>Random Delay Range (seconds)</label>
-                <div class="range-inputs">
-                    <input type="number" id="delay-min" min="0" max="10" step="0.1" value="1">
-                    <span>to</span>
-                    <input type="number" id="delay-max" min="0" max="10" step="0.1" value="4">
+        <div class="features-container">
+            <section class="feature-section">
+                <h2>Auto-Accept Ready Check</h2>
+                <div class="toggle-container">
+                    <label class="toggle">
+                        <input type="checkbox" id="auto-accept-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span>Enabled</span>
                 </div>
-            </div>
+                
+                <div class="setting-group">
+                    <label>Random Delay Range (seconds)</label>
+                    <div class="range-inputs">
+                        <input type="number" id="delay-min" min="0" max="10" step="0.1" value="1">
+                        <span>to</span>
+                        <input type="number" id="delay-max" min="0" max="10" step="0.1" value="4">
+                    </div>
+                </div>
+            </section>
             
-            <div class="history">
-                <h3>Recent Accepts</h3>
-                <div id="accept-history" class="history-list">No recent accepts</div>
-            </div>
-        </section>
+            <section class="feature-section">
+                <h2>Champion Select</h2>
+                <div class="warning-banner">
+                    ⚠️ Warning: Auto-ban/pick may violate Riot's Terms of Service. Use at your own risk.
+                </div>
+                
+                <div class="toggle-container">
+                    <label class="toggle">
+                        <input type="checkbox" id="auto-ban-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span>Auto-Ban</span>
+                </div>
+                
+                <div class="setting-group">
+                    <label>Ban delay (seconds)</label>
+                    <div class="range-inputs">
+                        <input type="number" id="ban-delay-min" min="0" max="30" step="0.1" value="1">
+                        <span>to</span>
+                        <input type="number" id="ban-delay-max" min="0" max="30" step="0.1" value="3">
+                    </div>
+                </div>
+                
+                <div class="toggle-container">
+                    <label class="toggle">
+                        <input type="checkbox" id="auto-pick-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span>Auto-Pick</span>
+                    <select id="pick-mode">
+                        <option value="hover">Hover</option>
+                        <option value="lock">Lock</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label>Pick delay (seconds)</label>
+                    <div class="range-inputs">
+                        <input type="number" id="pick-delay-min" min="0" max="30" step="0.1" value="1">
+                        <span>to</span>
+                        <input type="number" id="pick-delay-max" min="0" max="30" step="0.1" value="3">
+                    </div>
+                </div>
+                
+                <div class="role-tabs">
+                    <button class="role-tab active" data-role="default">Default</button>
+                    <button class="role-tab" data-role="top">Top</button>
+                    <button class="role-tab" data-role="jungle">Jungle</button>
+                    <button class="role-tab" data-role="middle">Mid</button>
+                    <button class="role-tab" data-role="bottom">Bot</button>
+                    <button class="role-tab" data-role="utility">Sup</button>
+                </div>
+                
+                <div id="role-content" class="role-content">
+                    <div class="champ-lists">
+                        <div class="champ-list">
+                            <h3>Bans (Priority)</h3>
+                            <div class="combobox-container" data-type="ban" data-priority="1"></div>
+                            <div class="combobox-container" data-type="ban" data-priority="2"></div>
+                            <div class="combobox-container" data-type="ban" data-priority="3"></div>
+                        </div>
+                        <div class="champ-list">
+                            <h3>Picks (Priority)</h3>
+                            <div class="combobox-container" data-type="pick" data-priority="1"></div>
+                            <div class="combobox-container" data-type="pick" data-priority="2"></div>
+                            <div class="combobox-container" data-type="pick" data-priority="3"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
         
         <section class="log-section">
             <h3>Log <button id="clear-log">Clear</button></h3>
             <div id="log-view" class="log-view"></div>
         </section>
     </div>
+    <script src="combobox.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

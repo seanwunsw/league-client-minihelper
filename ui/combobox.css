@@ -1,0 +1,76 @@
+/* Searchable combobox styles */
+.combobox {
+    position: relative;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.combobox-input {
+    width: 100%;
+    padding: 5px;
+    background: #0a0e1a;
+    border: 1px solid #3c3c41;
+    border-radius: 4px;
+    color: #f0e6d2;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.combobox-input:focus {
+    outline: none;
+    border-color: #0ac8b9;
+}
+
+.combobox-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #1e2328;
+    border: 1px solid #0ac8b9;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin-top: 2px;
+    display: none;
+}
+
+.combobox-dropdown.open {
+    display: block;
+}
+
+.combobox-option {
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 11px;
+    color: #f0e6d2;
+    border-bottom: 1px solid #0a0e1a;
+}
+
+.combobox-option:hover,
+.combobox-option.selected {
+    background: #0ac8b9;
+    color: #0a0e1a;
+}
+
+.combobox-option:last-child {
+    border-bottom: none;
+}
+
+.combobox-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #e84057;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 0 4px;
+    display: none;
+}
+
+.combobox.has-value .combobox-clear {
+    display: block;
+}

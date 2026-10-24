@@ -64,6 +64,29 @@ class LCUApiClient:
             logger.debug(f"POST {endpoint} failed: {e}")
             return None
     
+    def patch(self, endpoint: str, data: Optional[Dict] = None) -> Optional[Dict[str, Any]]:
+        """
+        Make PATCH request to LCU API.
+        
+        Args:
+            endpoint: API endpoint
+            data: Optional JSON data
+            
+        Returns:
+            JSON response or None on error
+        """
+        url = f"{self.base_url}{endpoint}"
+        try:
+            response = self.session.patch(url, auth=self.auth, json=data, timeout=5)
+            response.raise_for_status()
+            # Some endpoints return empty response
+            if response.content:
+                return response.json()
+            return {}
+        except Exception as e:
+            logger.debug(f"PATCH {endpoint} failed: {e}")
+            return None
+    
     def accept_ready_check(self) -> bool:
         """
         Accept the matchmaking ready check.

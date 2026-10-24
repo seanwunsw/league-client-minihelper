@@ -284,7 +284,7 @@ def ipc_server_thread(ipc_socket):
                             f'file://{ui_path}',
                             js_api=api,
                             width=750,
-                            height=800,
+                            height=900,
                             resizable=True,
                             min_size=(600, 600)
                         )
@@ -360,7 +360,7 @@ def create_tray_icon():
             f'file://{ui_path}',
             js_api=api,
             width=750,
-            height=800,
+            height=900,
             resizable=True,
             min_size=(600, 600)
         )
@@ -469,7 +469,7 @@ def webview_thread_main(config, logger):
                 f'file://{ui_path}',
                 js_api=api,
                 width=750,
-                height=800,
+                height=900,
                 resizable=True,
                 min_size=(600, 700)
             )
@@ -569,7 +569,7 @@ def main():
         # Setup logging
         logger = setup_logging(config)
         
-        logger.info("=== LoL Auto-Accept Helper v0.2.1 (UI Mode) ===")
+        logger.info("=== LoL Auto-Accept Helper v0.3.0 (UI Mode) ===")
         logger.info(f"App directory: {APP_DIR}")
         
         # Check for single instance
@@ -615,6 +615,12 @@ def main():
         auto_accept = AutoAcceptFeature(config)
         auto_accept.enabled = config.get('auto_accept_enabled', True)
         controller.register_feature(auto_accept)
+        
+        # Register champion select feature
+        from features.champ_select import ChampSelectFeature
+        champ_select = ChampSelectFeature(config)
+        controller.register_feature(champ_select)
+        
         logger.info("Features registered")
         
         # Start controller (non-blocking - runs connection loop in background thread)
