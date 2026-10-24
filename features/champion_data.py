@@ -57,8 +57,10 @@ class ChampionDataProvider:
             try:
                 with open(self.cache_file, 'r', encoding='utf-8') as f:
                     cached_data = json.load(f)
-                    logger.info(f"Loaded {len(cached_data)} champions from cache")
-                    self.champion_data = cached_data
+                    # Normalize data: convert string keys to int, remove old fields
+                    normalized_data = self._normalize_champion_data(cached_data)
+                    logger.info(f"Loaded {len(normalized_data)} champions from cache")
+                    self.champion_data = normalized_data
                     
                     # Merge with client data if provided
                     if client_champions:
@@ -98,9 +100,8 @@ class ChampionDataProvider:
         # Fetch champion data for each language
         en_data = self._fetch_champion_json(version, 'en_US')
         zh_tw_data = self._fetch_champion_json(version, 'zh_TW')
-        zh_cn_data = self._fetch_champion_json(version, 'zh_CN')
         
-        # Build combined data
+        # Build combined data (id derived from key, only store names)
         champion_data = {}
         
         for champ_id, champ_info in en_data.items():
@@ -108,11 +109,8 @@ class ChampionDataProvider:
             champ_key = int(champ_info['key'])
             
             champion_data[champ_key] = {
-                'id': champ_key,
                 'name_en': champ_info['name'],
-                'name_zh_tw': zh_tw_data.get(champ_id, {}).get('name', champ_info['name']),
-                'name_zh_cn': zh_cn_data.get(champ_id, {}).get('name', champ_info['name']),
-                'internal_name': champ_id
+                'name_zh_tw': zh_tw_data.get(champ_id, {}).get('name', champ_info['name'])
             }
         
         logger.info(f"Fetched {len(champion_data)} champions from Data Dragon")
@@ -151,13 +149,34 @@ class ChampionDataProvider:
             if champ_id > 0 and champ_id not in self.champion_data:
                 # New champion not in Data Dragon yet
                 self.champion_data[champ_id] = {
-                    'id': champ_id,
                     'name_en': champ_name,
-                    'name_zh_tw': champ_name,
-                    'name_zh_cn': champ_name,
-                    'internal_name': champ_name
+                    'name_zh_tw': champ_name
                 }
                 logger.info(f"Added new champion from client: {champ_name} ({champ_id})")
+    
+    def _normalize_champion_data(self, data: Dict) -> Dict[int, Dict]:
+        """
+        Normalize champion data: convert string keys to int, keep only name_en and name_zh_tw.
+        Handles old cache files that may have id, internal_name, or name_zh_cn fields.
+        
+        Args:
+            data: Raw champion data dict (may have string keys or old fields)
+            
+        Returns:
+            Normalized dict with int keys and only name_en/name_zh_tw
+        """
+        normalized = {}
+        for key, value in data.items():
+            # Convert key to int (handles both string and int keys)
+            champ_id = int(key)
+            
+            # Keep only name fields we support
+            normalized[champ_id] = {
+                'name_en': value.get('name_en', f'Champion {champ_id}'),
+                'name_zh_tw': value.get('name_zh_tw', value.get('name_en', f'Champion {champ_id}'))
+            }
+        
+        return normalized
     
     def _save_cache(self):
         """Save champion data to cache file."""
@@ -178,9 +197,11 @@ class ChampionDataProvider:
         try:
             with open(self.fallback_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                logger.info(f"Loaded {len(data)} champions from fallback")
-                self.champion_data = data
-                return data
+                # Normalize data: convert string keys to int, remove old fields
+                normalized = self._normalize_champion_data(data)
+                logger.info(f"Loaded {len(normalized)} champions from fallback")
+                self.champion_data = normalized
+                return normalized
         except Exception as e:
             logger.error(f"Failed to load fallback: {e}")
             return {}
@@ -205,7 +226,7 @@ class ChampionDataProvider:
     
     def search_champions(self, query: str) -> list:
         """
-        Search champions by name (English, Traditional Chinese, or Simplified Chinese).
+        Search champions by name (English or Traditional Chinese).
         
         Args:
             query: Search query (case-insensitive, partial match)
@@ -227,12 +248,10 @@ class ChampionDataProvider:
         for champ_id, champ_data in self.champion_data.items():
             name_en = champ_data.get('name_en', '').lower()
             name_zh_tw = champ_data.get('name_zh_tw', '').lower()
-            name_zh_cn = champ_data.get('name_zh_cn', '').lower()
             
             # Check if query matches any name (partial, case-insensitive)
             if (query_lower in name_en or 
-                query_lower in name_zh_tw or 
-                query_lower in name_zh_cn):
+                query_lower in name_zh_tw):
                 results.append((champ_id, self.get_display_name(champ_id)))
         
         # Sort by English name
