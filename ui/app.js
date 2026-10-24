@@ -7,6 +7,7 @@ let state = {
 
 let logs = [];
 const MAX_LOGS = 100;
+let startupError = null;
 let currentRole = 'default';
 let champions = [];
 let comboboxes = {}; // Store combobox instances by key
@@ -71,6 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
         logs = [];
         renderLogs();
     });
+
+    setupSettingsPanel();
     
     // Load initial logs from backend
     if (window.pywebview && window.pywebview.api) {
@@ -160,6 +163,95 @@ function render() {
         
         // Render role preferences
         renderRolePreferences(champSelect.settings.role_preferences);
+    }
+
+    renderAppSettings();
+}
+
+function setupSettingsPanel() {
+    const panel = document.getElementById('settings-panel');
+    const openButton = document.getElementById('settings-button');
+    const closeButton = document.getElementById('settings-close');
+    if (!panel || !openButton || !closeButton) return;
+
+    function openSettings() {
+        panel.hidden = false;
+        openButton.setAttribute('aria-expanded', 'true');
+        closeButton.focus();
+    }
+
+    function closeSettings() {
+        panel.hidden = true;
+        openButton.setAttribute('aria-expanded', 'false');
+    }
+
+    openButton.addEventListener('click', () => {
+        if (panel.hidden) openSettings();
+        else closeSettings();
+    });
+    closeButton.addEventListener('click', closeSettings);
+    panel.addEventListener('click', (event) => {
+        if (event.target === panel) closeSettings();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !panel.hidden) closeSettings();
+    });
+
+    document.querySelectorAll('input[name="close-action"]').forEach((input) => {
+        input.addEventListener('change', () => {
+            if (!input.checked || !window.pywebview || !window.pywebview.api) return;
+            window.pywebview.api.set_close_action(input.value).then((ok) => {
+                if (!ok) updateState();
+            }).catch(() => updateState());
+        });
+    });
+
+    const startup = document.getElementById('start-with-windows');
+    if (startup) {
+        startup.addEventListener('change', () => {
+            if (!window.pywebview || !window.pywebview.api || startup.disabled) return;
+            window.pywebview.api.set_start_with_windows(startup.checked).then((result) => {
+                startupError = (result && result.ok === false)
+                    ? (result.message || 'Could not update the Windows startup registration.')
+                    : null;
+                if (!result || result.ok === false || result.available === false) {
+                    updateState();
+                }
+            }).catch(() => updateState());
+        });
+    }
+}
+
+function renderAppSettings() {
+    if (!state.app_settings) return;
+    const settings = state.app_settings;
+
+    document.querySelectorAll('input[name="close-action"]').forEach((input) => {
+        const shouldCheck = input.value === settings.close_action;
+        if (input.checked !== shouldCheck) input.checked = shouldCheck;
+    });
+
+    const startup = document.getElementById('start-with-windows');
+    const label = document.getElementById('start-with-windows-label');
+    const note = document.getElementById('startup-note');
+    if (!startup || !note) return;
+
+    const available = !!settings.start_with_windows_available;
+    if (startup.checked !== !!settings.start_with_windows) {
+        startup.checked = !!settings.start_with_windows;
+    }
+    startup.disabled = !available;
+    if (label) label.classList.toggle('is-disabled', !available);
+
+    if (startupError) {
+        note.hidden = false;
+        note.textContent = startupError;
+    } else if (!available || settings.start_with_windows_note) {
+        note.hidden = false;
+        note.textContent = settings.start_with_windows_note || 'Start with Windows is only available in the packaged app.';
+    } else {
+        note.hidden = true;
+        note.textContent = '';
     }
 }
 

@@ -1,4 +1,5 @@
 """Generate UI screenshots with mock states using Playwright."""
+import json
 import os
 import sys
 from pathlib import Path
@@ -222,6 +223,66 @@ STATES = {
     }
 }
 
+DEFAULT_APP_SETTINGS = {
+    'close_action': 'exit',
+    'start_with_windows': False,
+    'start_with_windows_available': True,
+    'start_with_windows_note': None,
+    'startup_method': 'hkcu_run',
+    'requires_admin_elevation': False,
+}
+
+
+def install_ui_mock(page, state_data, logs):
+    """Install a stateful pywebview mock so settings changes stick."""
+    payload = dict(state_data)
+    payload.setdefault('app_settings', DEFAULT_APP_SETTINGS)
+    script = """
+window.__mockState = %s;
+window.__mockLogs = %s;
+window.pywebview = {
+  api: {
+    get_state: () => Promise.resolve(JSON.parse(JSON.stringify(window.__mockState))),
+    toggle_feature: () => Promise.resolve(true),
+    update_setting: () => Promise.resolve(true),
+    get_logs: () => Promise.resolve(window.__mockLogs),
+    set_close_action: (action) => {
+      window.__mockState.app_settings.close_action = action;
+      return Promise.resolve(true);
+    },
+    set_start_with_windows: (enabled) => {
+      window.__mockState.app_settings.start_with_windows = !!enabled;
+      return Promise.resolve({ok: true, available: true, enabled: !!enabled, message: null});
+    }
+  }
+};
+""" % (json.dumps(payload), json.dumps(logs))
+    page.add_init_script(script)
+
+
+def assert_main_window_does_not_scroll(page, label):
+    """The window itself must not scroll. Only the log view may."""
+    metrics = page.evaluate('''() => {
+        const scrolling = [];
+        for (const el of document.querySelectorAll('*')) {
+            const style = getComputedStyle(el);
+            const oy = style.overflowY;
+            if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
+                scrolling.push(el.id || el.className || el.tagName);
+            }
+        }
+        return {
+            scrollHeight: document.documentElement.scrollHeight,
+            innerHeight: window.innerHeight,
+            scrolling
+        };
+    }''')
+    print(f"  Scroll height: {metrics['scrollHeight']}px, window: {metrics['innerHeight']}px, scrolling: {metrics['scrolling']}")
+    assert metrics['scrollHeight'] <= metrics['innerHeight'] + 5, f"{label} page scrolls: {metrics}"
+    unexpected = [name for name in metrics['scrolling'] if 'log-view' not in str(name)]
+    assert not unexpected, f"{label} has extra scroll regions: {unexpected}"
+
+
 def generate_screenshots():
     """Generate screenshots for different states."""
     # Get UI path
@@ -242,22 +303,12 @@ def generate_screenshots():
             
             page = browser.new_page(viewport={'width': 750, 'height': 900})
             
-            # Mock window.pywebview.api
-            page.add_init_script(f"""
-                window.pywebview = {{
-                    api: {{
-                        get_state: () => Promise.resolve({str(state_data).replace("'", '"').replace('True', 'true').replace('False', 'false').replace('None', 'null')}),
-                        toggle_feature: () => Promise.resolve(true),
-                        update_setting: () => Promise.resolve(true),
-                        get_logs: () => Promise.resolve([
-                            {{"level": "info", "message": "Application started", "timestamp": "14:20:00"}},
-                            {{"level": "info", "message": "Client detected at port 12345", "timestamp": "14:20:01"}},
-                            {{"level": "info", "message": "Successfully connected to League Client", "timestamp": "14:20:02"}},
-                            {{"level": "info", "message": "Gameflow phase: {state_data['gameflow_phase']}", "timestamp": "14:20:03"}}
-                        ])
-                    }}
-                }};
-            """)
+            install_ui_mock(page, state_data, [
+                {"level": "info", "message": "Application started", "timestamp": "14:20:00"},
+                {"level": "info", "message": "Client detected at port 12345", "timestamp": "14:20:01"},
+                {"level": "info", "message": "Successfully connected to League Client", "timestamp": "14:20:02"},
+                {"level": "info", "message": f"Gameflow phase: {state_data['gameflow_phase']}", "timestamp": "14:20:03"},
+            ])
             
             # Load page
             page.goto(f'file://{ui_path.absolute()}')
@@ -278,18 +329,8 @@ def generate_screenshots():
                 assert ban_comboboxes.first.is_visible(), f"Ban comboboxes not visible in {state_name}"
                 assert pick_comboboxes.first.is_visible(), f"Pick comboboxes not visible in {state_name}"
                 
-                # Check that content fits without scrolling
-                scroll_height = page.evaluate('document.documentElement.scrollHeight')
-                window_height = page.evaluate('window.innerHeight')
-                
-                print(f"  Scroll height: {scroll_height}px, Window height: {window_height}px")
-                
-                if scroll_height > window_height:
-                    print(f"  WARNING: Content overflows (scroll height {scroll_height}px > window {window_height}px)")
-                    # Allow small overflow for rounding
-                    assert scroll_height <= window_height + 5, f"Content does not fit in viewport for {state_name}"
-                else:
-                    print(f"  [OK] Content fits without scrolling")
+                assert_main_window_does_not_scroll(page, state_name)
+                print("  [OK] Content fits without scrolling")
             
             # Take screenshot
             screenshot_path = screenshots_dir / f'{state_name}.png'
@@ -303,22 +344,13 @@ def generate_screenshots():
         page = browser.new_page(viewport={'width': 750, 'height': 900})
         
         state_data = STATES['champ_select']
-        page.add_init_script(f"""
-            window.pywebview = {{
-                api: {{
-                    get_state: () => Promise.resolve({str(state_data).replace("'", '"').replace('True', 'true').replace('False', 'false').replace('None', 'null')}),
-                    toggle_feature: () => Promise.resolve(true),
-                    update_setting: () => Promise.resolve(true),
-                        get_logs: () => Promise.resolve([
-                            {{"level": "info", "message": "Champ select: assigned role = middle, using Middle list", "timestamp": "14:20:05"}},
-                            {{"level": "info", "message": "Auto-ban: waiting 2.3s before banning Aatrox 厄薩斯", "timestamp": "14:20:06"}},
-                            {{"level": "info", "message": "[OK] Successfully banned Aatrox 厄薩斯", "timestamp": "14:20:09"}},
-                            {{"level": "info", "message": "Auto-pick: waiting 1.7s before hovering Ahri 阿璃", "timestamp": "14:20:15"}},
-                            {{"level": "info", "message": "[OK] Successfully hovered Ahri 阿璃", "timestamp": "14:20:17"}}
-                        ])
-                }}
-            }};
-        """)
+        install_ui_mock(page, state_data, [
+            {"level": "info", "message": "Champ select: assigned role = middle, using Middle list", "timestamp": "14:20:05"},
+            {"level": "info", "message": "Auto-ban: waiting 2.3s before banning Aatrox 厄薩斯", "timestamp": "14:20:06"},
+            {"level": "info", "message": "[OK] Successfully banned Aatrox 厄薩斯", "timestamp": "14:20:09"},
+            {"level": "info", "message": "Auto-pick: waiting 1.7s before hovering Ahri 阿璃", "timestamp": "14:20:15"},
+            {"level": "info", "message": "[OK] Successfully hovered Ahri 阿璃", "timestamp": "14:20:17"},
+        ])
         
         page.goto(f'file://{ui_path.absolute()}')
         page.wait_for_timeout(1500)
@@ -338,9 +370,59 @@ def generate_screenshots():
         print(f"  Saved to {screenshot_path}")
         
         page.close()
+
+        print("Generating screenshot with settings panel open...")
+        page = browser.new_page(viewport={'width': 750, 'height': 900})
+        install_ui_mock(page, STATES['connected'], [
+            {"level": "info", "message": "Application started", "timestamp": "14:20:00"},
+            {"level": "info", "message": "Close action: exit (window X quits the app)", "timestamp": "14:20:01"},
+            {"level": "info", "message": "Start with Windows is off", "timestamp": "14:20:02"},
+        ])
+        page.goto(f'file://{ui_path.absolute()}')
+        page.wait_for_timeout(800)
+        page.click('#settings-button')
+        page.wait_for_selector('#settings-panel', state='visible')
+        page.wait_for_timeout(200)
+        assert page.locator('#close-action-exit').is_checked()
+        assert page.locator('#start-with-windows').is_checked() is False
+        default_path = screenshots_dir / 'settings.png'
+        page.screenshot(path=str(default_path))
+        print(f"  Saved to {default_path}")
+
+        page.click('#close-action-tray')
+        page.click('#start-with-windows')
+        page.wait_for_timeout(400)
+
+        assert page.locator('#close-action-tray').is_checked()
+        assert page.locator('#start-with-windows').is_checked()
+        assert page.locator('#settings-panel').is_visible()
+        assert_main_window_does_not_scroll(page, 'settings')
+
+        # Log is the only region allowed to scroll; give it enough lines to prove that.
+        page.evaluate('''() => {
+            for (let i = 0; i < 30; i++) window.addLog('info', 'Log line ' + i);
+        }''')
+        page.wait_for_timeout(200)
+        log_overflow = page.evaluate('''() => {
+            const log = document.getElementById('log-view');
+            const body = getComputedStyle(document.body).overflowY;
+            return {
+                logScrolls: log.scrollHeight > log.clientHeight,
+                bodyOverflow: body,
+                pageScrolls: document.documentElement.scrollHeight > window.innerHeight + 5
+            };
+        }''')
+        assert log_overflow['logScrolls'], log_overflow
+        assert log_overflow['bodyOverflow'] == 'hidden', log_overflow
+        assert log_overflow['pageScrolls'] is False, log_overflow
+
+        screenshot_path = screenshots_dir / 'settings-updated.png'
+        page.screenshot(path=str(screenshot_path))
+        print(f"  Saved to {screenshot_path}")
+        page.close()
         browser.close()
     
-    print(f"\nGenerated {len(STATES) + 1} screenshots in {screenshots_dir}")
+    print(f"\nGenerated {len(STATES) + 3} screenshots in {screenshots_dir}")
     return True
 
 if __name__ == '__main__':

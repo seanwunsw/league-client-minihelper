@@ -56,6 +56,14 @@ exe = EXE(
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,  # No console window
+    # uac_admin=False: asInvoker, not requireAdministrator. There is no
+    # application manifest requesting elevation. Start-with-Windows therefore
+    # uses HKCU\Software\Microsoft\Windows\CurrentVersion\Run (see
+    # core/windows_startup.py). If you enable uac_admin, also set
+    # REQUIRES_ADMIN_ELEVATION there to True: a Run key will not elevate
+    # silently at logon, so registration must use a highest-privileges
+    # Task Scheduler logon task instead.
+    uac_admin=False,
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,

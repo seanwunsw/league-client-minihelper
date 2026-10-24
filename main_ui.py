@@ -12,8 +12,9 @@ import ctypes
 import socket
 from pathlib import Path
 from queue import Queue, Empty
-import yaml
 import traceback
+
+from core.app_settings import load_config_file, should_start_minimized
 
 # Determine app directory first (before any file operations)
 if getattr(sys, 'frozen', False):
@@ -39,6 +40,11 @@ tray_icon = None
 window = None
 ui_log_handler = None
 webview_ready = threading.Event()
+_ipc_socket = None
+_instance_mutex = None
+_shutdown_started = False
+_MUTEX_NAME = "Local\\LoLAutoAcceptHelper_SingleInstance"
+_ERROR_ALREADY_EXISTS = 183
 
 # Check for WebView2
 def check_webview2():
@@ -72,25 +78,7 @@ def show_error_box(title, message):
 
 def load_config():
     """Load configuration from yaml file in app directory."""
-    config_file = os.path.join(APP_DIR, 'config.yaml')
-    default_config = {
-        'auto_accept_enabled': True,
-        'accept_delay_min_seconds': 1,
-        'accept_delay_max_seconds': 4,
-        'start_minimized': False,
-        'log_level': 'INFO'
-    }
-    
-    if os.path.exists(config_file):
-        try:
-            with open(config_file, 'r', encoding='utf-8') as f:
-                loaded = yaml.safe_load(f)
-                if loaded:
-                    default_config.update(loaded)
-        except Exception as e:
-            print(f"Warning: Failed to load config: {e}")
-    
-    return default_config
+    return load_config_file(os.path.join(APP_DIR, 'config.yaml'))
 
 def setup_logging(config):
     """Setup logging with rotating file handler."""
@@ -223,6 +211,16 @@ class API:
     def update_setting(self, feature_name, setting_name, value):
         """Update a feature setting."""
         return self.controller.update_feature_setting(feature_name, setting_name, value)
+
+    def set_close_action(self, action):
+        """Persist what the window X button does ('exit' or 'tray')."""
+        return self.controller.set_close_action(action)
+
+    def set_start_with_windows(self, enabled):
+        """Persist login startup. Packaged exe only; source runs are a no-op."""
+        if isinstance(enabled, str):
+            enabled = enabled.strip().lower() in ('1', 'true', 'yes', 'on')
+        return self.controller.set_start_with_windows(bool(enabled))
     
     def get_logs(self):
         """Get current log buffer."""
@@ -230,6 +228,142 @@ class API:
 
 # IPC for single instance
 IPC_PORT = 57847
+
+def _kernel32():
+    """Win32 kernel32 with pointer-sized handle types (64-bit safe)."""
+    kernel32 = ctypes.windll.kernel32
+    kernel32.CreateMutexW.restype = ctypes.c_void_p
+    kernel32.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p]
+    kernel32.ReleaseMutex.argtypes = [ctypes.c_void_p]
+    kernel32.ReleaseMutex.restype = ctypes.c_int
+    kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+    kernel32.CloseHandle.restype = ctypes.c_int
+    kernel32.GetLastError.restype = ctypes.c_ulong
+    kernel32.SetLastError.argtypes = [ctypes.c_ulong]
+    return kernel32
+
+def _acquire_instance_mutex():
+    """Take the single-instance mutex. None when this is not Windows or it is taken."""
+    if sys.platform != 'win32':
+        return None
+    logger = logging.getLogger(__name__)
+    try:
+        kernel32 = _kernel32()
+        kernel32.SetLastError(0)
+        handle = kernel32.CreateMutexW(None, True, _MUTEX_NAME)
+        if not handle:
+            logger.warning("CreateMutexW returned no handle")
+            return None
+        if kernel32.GetLastError() == _ERROR_ALREADY_EXISTS:
+            kernel32.CloseHandle(handle)
+            logger.info("Single-instance mutex already held")
+            return None
+        logger.info("Single-instance mutex acquired")
+        return handle
+    except Exception:
+        logger.exception("Could not create single-instance mutex")
+        return None
+
+def _release_single_instance_lock():
+    """Close the IPC socket and release the single-instance mutex."""
+    global _ipc_socket, _instance_mutex
+    logger = logging.getLogger(__name__)
+
+    sock = _ipc_socket
+    _ipc_socket = None
+    if sock is not None:
+        try:
+            sock.close()
+            logger.info("Single-instance IPC socket closed")
+        except Exception:
+            logger.exception("Error closing single-instance IPC socket")
+
+    handle = _instance_mutex
+    _instance_mutex = None
+    if not handle or sys.platform != 'win32':
+        return
+    try:
+        kernel32 = _kernel32()
+        kernel32.ReleaseMutex(handle)
+        kernel32.CloseHandle(handle)
+        logger.info("Single-instance mutex released")
+    except Exception:
+        logger.exception("Error releasing single-instance mutex")
+
+def shutdown_application(reason):
+    """Stop the core and WebSocket, remove the tray icon, and release the single-instance lock."""
+    global _shutdown_started
+    if _shutdown_started:
+        return
+    _shutdown_started = True
+
+    logger = logging.getLogger(__name__)
+    logger.info(f"Shutting down ({reason})")
+
+    if controller:
+        try:
+            controller.stop()
+        except Exception:
+            logger.exception("Error stopping controller")
+
+    icon = tray_icon
+    if icon:
+        try:
+            icon.stop()
+        except Exception:
+            logger.exception("Error removing tray icon")
+
+    main_window = window
+    if main_window is not None:
+        try:
+            main_window.destroy()
+        except Exception:
+            logger.exception("Error closing main window")
+
+    keeper = keeper_window
+    if keeper is not None:
+        try:
+            keeper.destroy()
+        except Exception:
+            logger.exception("Error closing keeper window")
+
+    _release_single_instance_lock()
+
+def _handle_user_window_close(source):
+    """X button handler. Minimise does not call this.
+
+    close_action 'exit' shuts the app down. 'tray' destroys the UI window
+    and leaves the core running, which is the previous hide-to-tray behaviour.
+    """
+    global window
+    logger = logging.getLogger(__name__)
+    if source == 'startup':
+        logger.info("Main window closed by user (X button)")
+    elif source == 'tray':
+        logger.info("Window closed (from tray)")
+    elif source == 'ipc':
+        logger.info("Window closed (from IPC)")
+    else:
+        logger.info(f"Window closed ({source})")
+
+    if ui_log_handler:
+        ui_log_handler.clear_window()
+    window = None
+
+    action = 'exit'
+    if controller:
+        try:
+            action = controller.handle_main_window_close()
+        except Exception:
+            logger.exception("Could not read close action; exiting")
+            action = 'exit'
+
+    if action == 'tray':
+        logger.info("close_action=tray; window hidden, app still running")
+        return
+
+    logger.info("close_action=exit; shutting down")
+    shutdown_application("window-close")
 
 def check_single_instance():
     """Check if another instance is running and signal it. Returns socket if first instance."""
@@ -251,6 +385,9 @@ def check_single_instance():
         ipc_socket.bind(('127.0.0.1', IPC_PORT))
         ipc_socket.listen(1)
         ipc_socket.settimeout(1.0)  # Non-blocking with timeout
+        global _ipc_socket, _instance_mutex
+        _ipc_socket = ipc_socket
+        _instance_mutex = _acquire_instance_mutex()
         return ipc_socket
     except Exception as e:
         logging.getLogger(__name__).warning(f"Could not create IPC socket: {e}")
@@ -260,9 +397,14 @@ def ipc_server_thread(ipc_socket):
     """Listen for IPC commands from other instances."""
     logger = logging.getLogger(__name__)
     while True:
+        if _shutdown_started:
+            break
         try:
             client, _ = ipc_socket.accept()
             data = client.recv(1024)
+            if _shutdown_started:
+                client.close()
+                break
             if data == b'SHOW_WINDOW':
                 logger.info("IPC: Request to show window")
                 # Trigger tray open action
@@ -297,11 +439,7 @@ def ipc_server_thread(ipc_socket):
                                 ui_log_handler.set_window(window)
                         
                         def on_closed():
-                            global window, ui_log_handler
-                            logger.info("Window closed (from IPC)")
-                            if ui_log_handler:
-                                ui_log_handler.clear_window()
-                            window = None
+                            _handle_user_window_close('ipc')
                         
                         new_window.events.loaded += on_loaded
                         new_window.events.closed += on_closed
@@ -380,11 +518,7 @@ def create_tray_icon():
                         pass
         
         def on_closed():
-            global window, ui_log_handler
-            logger.info("Window closed (from tray)")
-            if ui_log_handler:
-                ui_log_handler.clear_window()
-            window = None
+            _handle_user_window_close('tray')
         
         new_window.events.loaded += on_loaded
         new_window.events.closed += on_closed
@@ -397,21 +531,9 @@ def create_tray_icon():
     
     def on_quit():
         """Quit the application."""
-        global controller, tray_icon, keeper_window
         logger = logging.getLogger(__name__)
         logger.info("Quit requested from tray")
-        
-        # Destroy keeper window to exit webview loop
-        if keeper_window:
-            keeper_window.destroy()
-        
-        # Stop controller
-        if controller:
-            controller.stop()
-        
-        # Stop tray (will exit the tray thread)
-        if tray_icon:
-            tray_icon.stop()
+        shutdown_application("tray-exit")
     
     menu = Menu(
         MenuItem('Open', on_open),
@@ -444,7 +566,9 @@ def webview_thread_main(config, logger):
         # Create API
         api = API(controller, ui_log_handler)
         
-        start_minimized = config.get('start_minimized', False)
+        start_minimized = should_start_minimized(config)
+        if '--minimized' in sys.argv:
+            logger.info("Starting minimized to tray (--minimized)")
         
         # Create a hidden keeper window to keep the GUI loop alive
         # This ensures webview.start() doesn't exit when user closes the visible window
@@ -532,11 +656,7 @@ def webview_thread_main(config, logger):
                             pass
             
             def on_closed():
-                global window, ui_log_handler
-                logger.info("Main window closed by user (X button)")
-                if ui_log_handler:
-                    ui_log_handler.clear_window()
-                window = None
+                _handle_user_window_close('startup')
             
             window.events.shown += on_shown
             window.events.loaded += on_loaded
@@ -622,6 +742,22 @@ def main():
         controller.register_feature(champ_select)
         
         logger.info("Features registered")
+
+        try:
+            startup_result = controller.apply_startup_registration()
+            if not startup_result.get('ok'):
+                logger.warning(
+                    f"Windows startup registration was not updated: {startup_result.get('message')}"
+                )
+            elif startup_result.get('message') and not startup_result.get('available'):
+                logger.info(startup_result['message'])
+            elif startup_result.get('changed'):
+                state = "enabled" if startup_result.get('enabled') else "removed"
+                logger.info(
+                    f"Windows startup registration {state} via {startup_result.get('method')}"
+                )
+        except Exception:
+            logger.exception("Could not sync Windows startup registration")
         
         # Start controller (non-blocking - runs connection loop in background thread)
         controller.start()
@@ -650,12 +786,8 @@ def main():
             except KeyboardInterrupt:
                 logger.info("Interrupted")
         
-        # Cleanup (will only reach here when keeper window destroyed or webview unavailable)
-        logger.info("Shutting down")
-        if controller:
-            controller.stop()
-        if tray_icon:
-            tray_icon.stop()
+        # Cleanup (reached when the keeper window is destroyed, or webview is unavailable)
+        shutdown_application("main-return")
         
         return 0
         

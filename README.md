@@ -13,7 +13,8 @@ A lightweight Windows desktop helper that automatically accepts League of Legend
 - **Live settings**: toggle features and adjust settings without restart
 - **Champion select automation**: per-role ban/pick preferences
 - **Live log view**: monitor what's happening in real-time
-- **Minimal memory footprint**: window closes to tray, releasing WebView2 processes
+- **Settings**: choose whether the window X button exits or minimises to the tray, and optionally start with Windows
+- **Minimal memory footprint**: minimising to the tray destroys the UI window and releases WebView2 processes
 
 ### ⚡ Core Features
 
@@ -72,6 +73,7 @@ The UI shows:
   - Per-role champion preferences (Top, Jungle, Mid, Bot, Support, Default)
   - Up to 3 ban and 3 pick champions per role in priority order
 - **Live log** - see what's happening in real-time
+- **Settings** (gear icon) - window close behaviour and start with Windows
 
 #### Champion Select Setup
 
@@ -91,9 +93,9 @@ The app will automatically:
 
 ### System Tray
 
-Once running, you'll see an icon in your system tray (bottom-right of Windows taskbar). 
+Once running, you'll see an icon in your system tray (bottom-right of Windows taskbar).
 
-**Closing the window (X button)** hides to tray and **destroys the UI window** to free memory (WebView2 processes exit). The core keeps running in the background.
+**Closing the window (X button)** exits the app by default: the League connection and WebSocket stop, the tray icon is removed, and the single-instance lock is released. The minimise button still minimises the window and leaves the app running. In Settings you can switch X back to **Minimise to tray**, which destroys the UI window to free memory (WebView2 processes exit) and keeps the core running.
 
 Right-click the tray icon to:
 - **Open** - reopen the UI window
@@ -119,6 +121,13 @@ accept_delay_max_seconds: 4
 # UI Settings (v0.2.0+)
 start_minimized: false  # false = open window on start, true = start in tray only
 
+# Window X button: exit (default) or tray (hide to tray, keep running)
+close_action: exit
+
+# Launch at Windows login, minimised to the tray. Off by default.
+# Packaged exe only. A normal double-click still opens the window.
+start_with_windows: false
+
 # Legacy config (backward compatible):
 # If you prefer a fixed delay, uncomment this line and comment out the min/max above:
 # accept_delay_seconds: 2
@@ -132,8 +141,22 @@ log_level: INFO
 - `auto_accept_enabled`: Turn auto-accept on/off (default: `true`)
 - `accept_delay_min_seconds` / `accept_delay_max_seconds`: Random delay range before accepting (default: 1-4 seconds). Each ready check gets a new random delay in this range.
 - `start_minimized`: Start in tray without opening the window (default: `false`)
+- `close_action`: What the window X button does. `exit` (default) shuts the app down. `tray` hides to the tray and keeps running. Older config files without this key behave as `exit`.
+- `start_with_windows`: Register the packaged exe to launch at login, minimised to the tray (default: `false`). Turning it off removes the registration. If you move the exe, the next launch rewrites the registration when this is on.
 - `accept_delay_seconds`: (Legacy) Fixed delay before accepting. If present, overrides min/max settings.
 - `log_level`: Logging verbosity - `DEBUG`, `INFO`, `WARNING`, or `ERROR` (default: `INFO`)
+
+**Start with Windows**
+
+The setting is off until you turn it on from the gear menu (or set `start_with_windows: true`). The login entry runs `LoLAutoAccept.exe --minimized`, so it starts in the tray. Opening the exe yourself does not pass that flag, so the window still appears (unless `start_minimized` is true).
+
+`build.spec` sets `uac_admin=False` and there is no manifest requesting `requireAdministrator`. The exe is not elevated, so Windows can start it at logon through the current-user Run key:
+
+`HKCU\Software\Microsoft\Windows\CurrentVersion\Run` → `LoLAutoAccept` = `"<path-to-exe>" --minimized`
+
+A Run key cannot elevate a process silently. If a future build enables `uac_admin`, also set `REQUIRES_ADMIN_ELEVATION = True` in `core/windows_startup.py`. That switches registration to a Task Scheduler logon task with highest privileges (`schtasks /SC ONLOGON /RL HIGHEST`) instead of the Run key.
+
+Running from source (`python main_ui.py`) cannot register startup. The checkbox is disabled and the settings panel explains why. A source run also leaves any existing registration for the installed exe alone.
 
 **Why random delay?**
 - Avoids appearing robotic (instant accepts look suspicious)
@@ -306,6 +329,14 @@ League of Legends 自動接受對戰工具，使用英雄聯盟客戶端的本�
 - `auto_accept_enabled`: 啟用/停用自動接受功能
 - `accept_delay_seconds`: 延遲接受秒數（0 表示立即）
 - `log_level`: 記錄等級（DEBUG, INFO, WARNING, ERROR）
+- `close_action`: 視窗關閉按鈕。`exit`（預設）結束程式，`tray` 縮到系統匣並繼續執行
+- `start_with_windows`: 登入 Windows 時啟動並縮到系統匣（預設關閉）。僅適用於封裝後的 exe。此建置不需要系統管理員權限，因此寫入目前使用者的 `HKCU\...\Run`，並加上 `--minimized`。若以後的建置要求提高權限，則改用工作排程器的登入工作（最高權限）
+
+## 關閉視窗與開機啟動
+
+- 視窗的關閉按鈕（X）預設會完整結束程式（停止連線、移除系統匣圖示、釋放單例鎖定）。最小化按鈕仍只是最小化。
+- 設定（齒輪）可改成「縮到系統匣」。系統匣選單的 Quit 一樣會結束程式。
+- 「Start with Windows」預設關閉。從原始碼執行時此選項會停用。
 
 ## Windows SmartScreen 提示
 

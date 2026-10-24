@@ -8,7 +8,9 @@ from pathlib import Path
 from lcu.client_finder import get_client_info, ClientInfo
 from lcu.api_client import LCUApiClient
 from lcu.websocket_client import LCUWebSocketClient
+from core.app_settings import apply_app_setting_defaults, normalize_close_action
 from core.event_bus import EventBus
+from core.windows_startup import StartupRegistrar
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +18,12 @@ logger = logging.getLogger(__name__)
 class AppController:
     """Main application controller that manages lifecycle and state."""
     
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
+    def __init__(self, config: Dict[str, Any], config_path: str = "config.yaml", startup_registrar=None):
+        if config is None:
+            config = {}
+        self.config = apply_app_setting_defaults(config)
+        self.config_path = config_path
+        self.startup = startup_registrar if startup_registrar is not None else StartupRegistrar()
         self.event_bus = EventBus()
         
         # Connection state
@@ -96,7 +102,8 @@ class AppController:
                     'status': f.get_status() if hasattr(f, 'get_status') else {}
                 }
                 for f in self.features
-            ]
+            ],
+            'app_settings': self.get_app_settings(),
         }
     
     def update_feature_setting(self, feature_name: str, setting_name: str, value: Any) -> bool:
@@ -126,6 +133,79 @@ class AppController:
                 self._notify_state_change()
                 return feature.enabled
         return False
+
+    def get_close_action(self) -> str:
+        """What the window X button does: 'exit' or 'tray'."""
+        return normalize_close_action(self.config.get('close_action'))
+
+    def set_close_action(self, action: str) -> bool:
+        """Persist close_action. Returns False for values other than exit|tray."""
+        normalized = normalize_close_action(action, invalid=None)
+        if normalized is None:
+            return False
+        self.config['close_action'] = normalized
+        self._save_config()
+        self._notify_state_change()
+        return True
+
+    def handle_main_window_close(self) -> str:
+        """Policy for the window X button.
+
+        Returns 'exit' (stop the core, tray, and single-instance lock) or
+        'tray' (destroy the UI window and keep running). The minimise button
+        does not come through here.
+        """
+        return self.get_close_action()
+
+    def get_start_with_windows(self) -> bool:
+        return bool(self.config.get('start_with_windows', False))
+
+    def set_start_with_windows(self, enabled: bool) -> Dict[str, Any]:
+        """Persist the preference and register or remove the login entry.
+
+        From source the preference cannot be turned on; the result carries
+        a note and the stored value stays unchanged.
+        """
+        enabled = bool(enabled)
+        if not self.startup.status().get('available'):
+            if enabled:
+                result = self.startup.sync(True)
+                payload = result.to_dict()
+                payload['start_with_windows'] = self.get_start_with_windows()
+                return payload
+            self.config['start_with_windows'] = False
+            self._save_config()
+            self._notify_state_change()
+            return self.startup.sync(False).to_dict()
+
+        result = self.startup.sync(enabled)
+        if not result.ok:
+            payload = result.to_dict()
+            payload['start_with_windows'] = self.get_start_with_windows()
+            return payload
+
+        self.config['start_with_windows'] = bool(result.enabled)
+        self._save_config()
+        self._notify_state_change()
+        return result.to_dict()
+
+    def apply_startup_registration(self) -> Dict[str, Any]:
+        """On launch, create, refresh, or remove the login entry to match config.
+
+        Re-registers when start_with_windows is on and the exe path changed.
+        """
+        return self.startup.sync(self.get_start_with_windows()).to_dict()
+
+    def get_app_settings(self) -> Dict[str, Any]:
+        info = self.startup.status()
+        return {
+            'close_action': self.get_close_action(),
+            'start_with_windows': self.get_start_with_windows(),
+            'start_with_windows_available': bool(info.get('available')),
+            'start_with_windows_note': info.get('note'),
+            'startup_method': info.get('method'),
+            'requires_admin_elevation': bool(info.get('requires_admin')),
+        }
     
     def _save_config(self):
         """Save current config to file."""
@@ -147,7 +227,7 @@ class AppController:
                     self.config['champ_select_preferences'] = feature.role_preferences
             
             # Write to file
-            with open('config.yaml', 'w') as f:
+            with open(self.config_path, 'w', encoding='utf-8') as f:
                 yaml.dump(self.config, f, default_flow_style=False)
             
             logger.debug("Config saved successfully")

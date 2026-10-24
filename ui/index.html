@@ -10,7 +10,14 @@
 <body>
     <div class="container">
         <header>
-            <h1>⚔️ LoL Helper</h1>
+            <div class="title-group">
+                <h1>⚔️ LoL Helper</h1>
+                <button type="button" id="settings-button" class="icon-button" title="Settings" aria-label="Settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-panel">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                        <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.88a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.23.4.32.64.22l2.39-.96c.5.4 1.05.72 1.63.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.5-.42l.36-2.54c.58-.22 1.12-.54 1.63-.94l2.39.96c.24.1.51 0 .64-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/>
+                    </svg>
+                </button>
+            </div>
             <div class="connection-status" id="connection-status">
                 <span class="status-dot" id="status-dot"></span>
                 <span id="status-text">Disconnected</span>
@@ -118,6 +125,31 @@
             <h3>Log <button id="clear-log">Clear</button></h3>
             <div id="log-view" class="log-view"></div>
         </section>
+    </div>
+
+    <div id="settings-panel" class="settings-panel" hidden role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <div class="settings-card">
+            <div class="settings-header">
+                <h2 id="settings-title">Settings</h2>
+                <button type="button" id="settings-close" class="icon-button" aria-label="Close settings">✕</button>
+            </div>
+            <fieldset class="settings-fieldset">
+                <legend>When closing the window</legend>
+                <label class="settings-option">
+                    <input type="radio" name="close-action" id="close-action-exit" value="exit" checked>
+                    <span>Exit app</span>
+                </label>
+                <label class="settings-option">
+                    <input type="radio" name="close-action" id="close-action-tray" value="tray">
+                    <span>Minimise to tray</span>
+                </label>
+            </fieldset>
+            <label class="settings-check" id="start-with-windows-label">
+                <input type="checkbox" id="start-with-windows">
+                <span>Start with Windows (minimised to tray)</span>
+            </label>
+            <p id="startup-note" class="settings-note" hidden></p>
+        </div>
     </div>
     <script src="combobox.js"></script>
     <script src="app.js"></script>
